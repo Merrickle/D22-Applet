@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Overhead Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8EAEB; --surface:#FFFFFF; --ink:#1B2024; --muted:#5E676E; --line:#CDD2D5;
+  --hivis:#E8601C; --hivis-ink:#FFFFFF; --steel:#2F5D7C; --tag:#F4C542; --tag-ink:#1B2024;
+  --late:#B3261E; --ok:#2E7D4F;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#15181B; --surface:#1F2428; --ink:#E9ECEE; --muted:#9AA3AA; --line:#343B41;
+  --hivis:#F2772F; --steel:#7FB2D6; --tag:#E2B63A; --late:#FF8A80; --ok:#6FCF97;}}
+:root[data-theme="dark"]{
+  --bg:#15181B; --surface:#1F2428; --ink:#E9ECEE; --muted:#9AA3AA; --line:#343B41;
+  --hivis:#F2772F; --steel:#7FB2D6; --tag:#E2B63A; --late:#FF8A80; --ok:#6FCF97;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--steel);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+a{color:var(--steel)}
+header{padding:16px 0 4px}
+.back{display:inline-block;font-weight:600;text-decoration:none;font-size:15px;margin-bottom:6px}
+h1{font-family:var(--display);font-weight:700;font-size:38px;line-height:1;margin:0}
+.sync{color:var(--muted);font-size:14px;margin-top:4px}
+
+.board{display:grid;grid-template-columns:repeat(4,1fr);margin:14px 0 12px;border:2px solid var(--ink);
+  border-radius:6px;overflow:hidden;background:var(--surface)}
+.board button{border:0;border-right:2px solid var(--ink);background:transparent;padding:10px 4px 8px;cursor:pointer;text-align:center}
+.board button:last-child{border-right:0}
+.board .n{display:block;font-family:var(--display);font-weight:700;font-size:30px;line-height:1}
+.board .l{display:block;font-size:12px;font-weight:600}
+.board button[aria-selected="true"]{background:var(--hivis);color:var(--hivis-ink)}
+
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tools input,.tools select{flex:1 1 150px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+
+.aisle{font-family:var(--display);font-size:24px;background:var(--bg);border-left:6px solid var(--tag);
+  padding:5px 10px;border-radius:4px;margin:16px 0 6px;position:sticky;top:env(safe-area-inset-top,0px);z-index:2}
+ul.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.bay{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:6px;
+  padding:10px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start}
+.bay.alert{border-left-color:var(--late)}
+.bay.warn{border-left-color:var(--hivis)}
+.bay.good{border-left-color:var(--ok)}
+.slot{background:var(--tag);color:var(--tag-ink);font-family:var(--display);font-weight:700;border-radius:3px;
+  padding:4px 6px;min-width:56px;text-align:center;line-height:1.05}
+.slot small{display:block;font-size:11px;font-weight:600}
+.slot b{display:block;font-size:19px}
+.main{min-width:0;cursor:pointer}
+.nm{font-weight:600;overflow-wrap:anywhere}
+.meta{font-size:14px;color:var(--muted);display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:2px}
+.flag{font-size:12px;font-weight:600;border:1px solid currentColor;border-radius:3px;padding:1px 6px}
+.bad{color:var(--late)}.due{color:var(--hivis)}.fine{color:var(--ok)}
+.audit{border:2px solid var(--steel);color:var(--steel);background:transparent;border-radius:999px;
+  padding:6px 10px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.empty{text-align:center;padding:34px 16px;color:var(--muted);border:2px dashed var(--line);border-radius:6px}
+
+.bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;z-index:6}
+.btn{border:0;border-radius:6px;padding:12px 18px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--hivis);color:var(--hivis-ink);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.btn.ghost{background:var(--surface);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--late);border:1px solid var(--late)}
+dialog{border:0;border-radius:10px;padding:0;width:min(560px,calc(100% - 24px));background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.sheet{padding:18px}
+.sheet h2{font-family:var(--display);font-size:26px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
+.f.full{grid-column:1/-1}
+.f input,.f select,.f textarea{font-weight:400;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);width:100%}
+.f textarea{min-height:64px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:6px;grid-column:1/-1}
+.chips label{flex:1 1 auto}
+.chips input{position:absolute;opacity:0}
+.chips span{display:block;text-align:center;padding:8px 10px;border:2px solid var(--line);border-radius:6px;font-size:14px;font-weight:600;cursor:pointer}
+.chips input:checked+span{border-color:var(--late);background:var(--late);color:#fff}
+.row{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+pre.sum{white-space:pre-wrap;background:var(--bg);border-radius:6px;padding:12px;font:14px/1.45 var(--body);max-height:55vh;overflow:auto;margin:0}
+.toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:8px 14px;border-radius:6px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+@media (max-width:420px){h1{font-size:32px}.grid{grid-template-columns:1fr}
+  .bay{grid-template-columns:auto 1fr}.bay .audit{grid-column:1/-1;justify-self:start}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="back" id="back" href="../index.html">&larr; Floor tracker</a>
+  <h1>Overhead map</h1>
+  <div class="sync" id="sync">Saved on this device</div>
+</header>
+
+<div class="board" role="tablist" id="board"></div>
+
+<div class="tools">
+  <input type="search" id="q" placeholder="Search SKU, product, notes" aria-label="Search">
+  <select id="aisleFilter" aria-label="Filter by aisle"><option value="">All aisles</option></select>
+</div>
+
+<div id="list"></div>
+</div>
+
+<div class="bar">
+  <button class="btn ghost" id="walkBtn">Walk list</button>
+  <button class="btn primary" id="addBtn">Add bay</button>
+</div>
+
+<dialog id="edit">
+  <form class="sheet" id="form" method="dialog">
+    <h2 id="formTitle">Add bay</h2>
+    <div class="grid">
+      <label class="f">Aisle<input name="aisle" inputmode="numeric" required autocomplete="off"></label>
+      <label class="f">Bay / section<input name="bay" inputmode="numeric" autocomplete="off"></label>
+      <label class="f">Side<select name="side"><option value="">—</option><option>A</option><option>B</option><option>Left</option><option>Right</option></select></label>
+      <label class="f">Level<select name="level"><option>1st overhead</option><option>2nd overhead</option><option>3rd overhead</option><option>Top stock</option><option>Rack end</option></select></label>
+      <label class="f full">What's up there<input name="product" required autocomplete="off" placeholder="e.g. 2x4x8 PT, mixed"></label>
+      <label class="f">SKU<input name="sku" inputmode="numeric" autocomplete="off"></label>
+      <label class="f">Units / pallets<input name="qty" inputmode="numeric" autocomplete="off"></label>
+      <label class="f">Label state<select name="label">
+        <option>Labeled</option><option>Unlabeled</option><option>Wrong label</option><option>Faded / torn</option></select></label>
+      <label class="f">Last audited<input name="audited" type="date"></label>
+      <div class="chips">
+        <label><input type="checkbox" name="f_overhang"><span>Overhang</span></label>
+        <label><input type="checkbox" name="f_damaged"><span>Damaged pallet</span></label>
+        <label><input type="checkbox" name="f_unwrapped"><span>Not banded</span></label>
+        <label><input type="checkbox" name="f_downstock"><span>Needs downstock</span></label>
+        <label><input type="checkbox" name="f_blocked"><span>Can't reach</span></label>
+      </div>
+      <label class="f full">Notes<textarea name="notes"></textarea></label>
+    </div>
+    <div class="row">
+      <button type="button" class="btn danger" id="delBtn" hidden>Delete</button>
+      <span style="flex:1"></span>
+      <button type="button" class="btn ghost" id="cancelBtn">Cancel</button>
+      <button type="submit" class="btn primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="walkDlg">
+  <div class="sheet">
+    <h2>Walk list</h2>
+    <pre class="sum" id="walkText"></pre>
+    <div class="row"><span style="flex:1"></span>
+      <button class="btn ghost" id="walkClose">Close</button>
+      <button class="btn primary" id="walkCopy">Copy</button></div>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+const $ = s => document.querySelector(s);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const LS = "overhead-map:v1";
+const FLAGS = {f_overhang:"Overhang", f_damaged:"Damaged pallet", f_unwrapped:"Not banded",
+               f_downstock:"Needs downstock", f_blocked:"Can't reach"};
+const STALE_DAYS = 30;
+let items = [], view = "all", editing = null, db = null;
+
+const today = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const daysSince = d => d ? Math.floor((Date.parse(today())-Date.parse(d))/86400000) : null;
+const flagsOf = i => Object.keys(FLAGS).filter(k=>i[k]);
+const isSafety = i => i.f_overhang || i.f_damaged || i.f_unwrapped;
+const isStale = i => { const n = daysSince(i.audited); return n===null || n > STALE_DAYS; };
+const needsLabel = i => i.label && i.label!=="Labeled";
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),1700); }
+
+function loadLocal(){ try{ items = JSON.parse(localStorage.getItem(LS)||"[]"); }catch(e){ items=[]; } }
+function saveLocal(){ try{ localStorage.setItem(LS, JSON.stringify(items)); }catch(e){} }
+async function persist(it){
+  if(db){ try{ await db.collection("bays").doc(it.id).set(it); }
+    catch(e){ toast(e && e.code==="quota_exceeded" ? "Storage is full." : "Couldn't save."); } }
+  else saveLocal();
+}
+async function remove(id){
+  if(db){ try{ await db.collection("bays").doc(id).delete(); }catch(e){ toast("Couldn't delete."); } }
+  else saveLocal();
+}
+async function connect(){
+  if(!window.claude || !window.claude.use) return;
+  try{
+    const d = await window.claude.use("db"); if(!d) return;
+    db = d; $("#sync").textContent = "Syncing…";
+    db.collection("bays").onSnapshot(s=>{ items = s.docs.map(x=>x.data());
+      $("#sync").textContent = "Shared with everyone on this link"; render(); },
+      ()=>{ $("#sync").textContent = "Sync paused. Reload to reconnect."; });
+  }catch(e){}
+}
+
+function counts(){
+  return {
+    all: items.length,
+    safety: items.filter(isSafety).length,
+    label: items.filter(needsLabel).length,
+    stale: items.filter(isStale).length
+  };
+}
+
+function render(){
+  const c = counts();
+  $("#board").innerHTML = [["all","All bays",c.all],["safety","Safety",c.safety],["label","Labels",c.label],["stale","Overdue",c.stale]]
+    .map(([k,l,n])=>`<button role="tab" aria-selected="${k===view}" data-v="${k}">
+      <span class="n">${n}</span><span class="l">${l}</span></button>`).join("");
+
+  const aisles = [...new Set(items.map(i=>i.aisle).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+  const af = $("#aisleFilter"), cur = af.value;
+  af.innerHTML = `<option value="">All aisles</option>` + aisles.map(a=>`<option ${a===cur?"selected":""}>${esc(a)}</option>`).join("");
+
+  const q = $("#q").value.trim().toLowerCase();
+  let list = items
+    .filter(i=> view==="all" || (view==="safety"&&isSafety(i)) || (view==="label"&&needsLabel(i)) || (view==="stale"&&isStale(i)))
+    .filter(i=> !af.value || i.aisle===af.value)
+    .filter(i=> !q || [i.product,i.sku,i.notes,i.aisle,i.bay].join(" ").toLowerCase().includes(q));
+
+  list.sort((a,b)=> (Number(a.aisle)-Number(b.aisle)) || (Number(a.bay||0)-Number(b.bay||0)) || String(a.level).localeCompare(String(b.level)));
+
+  if(!list.length){
+    $("#list").innerHTML = `<div class="empty">${items.length?"Nothing here with these filters.":"No bays logged yet. Walk one aisle and add what's overhead."}</div>`;
+    return;
+  }
+  let html = "", lastAisle = null;
+  list.forEach(i=>{
+    if(i.aisle!==lastAisle){ if(lastAisle!==null) html += `</ul>`; html += `<div class="aisle">Aisle ${esc(i.aisle)}</div><ul class="list">`; lastAisle = i.aisle; }
+    const fl = flagsOf(i), n = daysSince(i.audited);
+    const cls = isSafety(i) ? "alert" : (needsLabel(i)||isStale(i)) ? "warn" : "good";
+    const auditTxt = n===null ? "Never audited" : n===0 ? "Audited today" : `${n} day${n===1?"":"s"} ago`;
+    const meta = [
+      i.sku && `<span>SKU ${esc(i.sku)}</span>`,
+      i.qty && `<span>${esc(i.qty)} units</span>`,
+      `<span>${esc(i.level||"")}</span>`,
+      needsLabel(i) && `<span class="flag due">${esc(i.label)}</span>`,
+      ...fl.map(k=>`<span class="flag bad">${FLAGS[k]}</span>`),
+      `<span class="${isStale(i)?"due":"fine"}">${auditTxt}</span>`
+    ].filter(Boolean).join("");
+    html += `<li class="bay ${cls}">
+      <div class="slot"><small>Bay</small><b>${esc(i.bay||"—")}</b>${i.side?`<small>${esc(i.side)}</small>`:""}</div>
+      <div class="main" data-edit="${i.id}" role="button" tabindex="0">
+        <div class="nm">${esc(i.product)}</div>
+        <div class="meta">${meta}</div>
+        ${i.notes?`<div class="meta">${esc(i.notes)}</div>`:""}
+      </div>
+      <button class="audit" data-audit="${i.id}">Audited</button>
+    </li>`;
+  });
+  html += `</ul>`;
+  $("#list").innerHTML = html;
+}
+
+const form = $("#form");
+function openEdit(it){
+  editing = it || null;
+  form.reset();
+  if(it){
+    ["aisle","bay","side","level","product","sku","qty","label","audited","notes"].forEach(k=>{ if(form[k]) form[k].value = it[k]||""; });
+    Object.keys(FLAGS).forEach(k=>{ form[k].checked = !!it[k]; });
+  } else {
+    form.audited.value = today();
+    const af = $("#aisleFilter"); if(af.value) form.aisle.value = af.value;
+  }
+  $("#formTitle").textContent = it ? "Edit bay" : "Add bay";
+  $("#delBtn").hidden = !it;
+  if(!$("#edit").open) $("#edit").showModal();
+  setTimeout(()=>form[it?"product":"aisle"].focus(),50);
+}
+form.addEventListener("submit", async e=>{
+  e.preventDefault();
+  const f = new FormData(form), now = Date.now();
+  const it = {
+    id: editing ? editing.id : ("b"+now.toString(36)+Math.random().toString(36).slice(2,6)),
+    aisle: String(f.get("aisle")||"").trim(), bay: String(f.get("bay")||"").trim(),
+    side: f.get("side")||"", level: f.get("level")||"",
+    product: String(f.get("product")||"").trim(), sku: String(f.get("sku")||"").trim(),
+    qty: String(f.get("qty")||"").trim(), label: f.get("label")||"Labeled",
+    audited: f.get("audited")||"", notes: String(f.get("notes")||"").trim(),
+    createdAt: editing ? editing.createdAt : now, updatedAt: now
+  };
+  Object.keys(FLAGS).forEach(k=>{ it[k] = !!f.get(k); });
+  if(!it.aisle || !it.product) return;
+  const i = items.findIndex(x=>x.id===it.id);
+  if(i>=0) items[i]=it; else items.push(it);
+  $("#edit").close(); render(); toast(editing?"Bay updated":"Bay added");
+  await persist(it);
+});
+$("#cancelBtn").onclick = ()=>$("#edit").close();
+$("#delBtn").onclick = async ()=>{
+  if(!editing || !confirm("Delete this bay record?")) return;
+  const id = editing.id; items = items.filter(x=>x.id!==id);
+  $("#edit").close(); render(); toast("Deleted"); await remove(id);
+};
+$("#addBtn").onclick = ()=>openEdit(null);
+
+document.addEventListener("click", async e=>{
+  const v = e.target.closest("[data-v]"); if(v){ view=v.dataset.v; render(); return; }
+  const ed = e.target.closest("[data-edit]"); if(ed){ openEdit(items.find(x=>x.id===ed.dataset.edit)); return; }
+  const a = e.target.closest("[data-audit]");
+  if(a){
+    const it = items.find(x=>x.id===a.dataset.audit); if(!it) return;
+    const upd = {...it, audited: today(), updatedAt: Date.now()};
+    items = items.map(x=>x.id===it.id?upd:x); render(); toast("Marked audited today");
+    await persist(upd);
+  }
+});
+document.addEventListener("keydown", e=>{
+  const ed = e.target.closest && e.target.closest("[data-edit]");
+  if(ed && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); ed.click(); }
+});
+$("#q").addEventListener("input", render);
+$("#aisleFilter").addEventListener("change", render);
+
+function walkText(){
+  const lines = [`Overhead walk — ${new Date().toLocaleDateString()}`];
+  const safety = items.filter(isSafety);
+  if(safety.length){ lines.push("", "SAFETY — fix first"); safety.forEach(i=>lines.push("  "+line(i))); }
+  const labels = items.filter(i=>needsLabel(i) && !isSafety(i));
+  if(labels.length){ lines.push("", "LABELS"); labels.forEach(i=>lines.push("  "+line(i))); }
+  const down = items.filter(i=>i.f_downstock && !isSafety(i));
+  if(down.length){ lines.push("", "DOWNSTOCK"); down.forEach(i=>lines.push("  "+line(i))); }
+  const stale = items.filter(i=>isStale(i) && !isSafety(i) && !needsLabel(i));
+  if(stale.length){ lines.push("", `NOT AUDITED IN ${STALE_DAYS}+ DAYS`); stale.forEach(i=>lines.push("  "+line(i))); }
+  if(lines.length===1) lines.push("", "Everything overhead is current and clear.");
+  return lines.join("\n");
+}
+function line(i){
+  const fl = flagsOf(i).map(k=>FLAGS[k]);
+  if(needsLabel(i)) fl.push(i.label);
+  const n = daysSince(i.audited);
+  return [`A${i.aisle}${i.bay?`-B${i.bay}`:""}${i.side?i.side:""}`, i.level, i.product,
+    i.sku&&`SKU ${i.sku}`, fl.join(", "), n===null?"never audited":`${n}d`].filter(Boolean).join(" · ");
+}
+$("#walkBtn").onclick = ()=>{ $("#walkText").textContent = walkText(); $("#walkDlg").showModal(); };
+$("#walkClose").onclick = ()=>$("#walkDlg").close();
+$("#walkCopy").onclick = async ()=>{
+  try{ await navigator.clipboard.writeText($("#walkText").textContent); toast("Walk list copied"); }
+  catch(e){ const r=document.createRange(); r.selectNodeContents($("#walkText")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast("Selected — copy from here"); }
+};
+
+if(/claude/.test(location.hostname)){ $("#back").href="https://claude.ai/artifact/5UGQQjf8QSRFYaHS24y8Dx"; }
+$("#back").target="_top";
+loadLocal(); render(); connect();
+})();
+</script>
+</body>
+</html>

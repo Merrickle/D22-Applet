@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Project Takeoff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8EAEB; --surface:#FFFFFF; --ink:#1B2024; --muted:#5E676E; --line:#CDD2D5;
+  --hivis:#E8601C; --hivis-ink:#FFFFFF; --steel:#2F5D7C; --tag:#F4C542;
+  --late:#B3261E; --ok:#2E7D4F;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#15181B; --surface:#1F2428; --ink:#E9ECEE; --muted:#9AA3AA; --line:#343B41;
+  --hivis:#F2772F; --steel:#7FB2D6; --tag:#E2B63A; --late:#FF8A80; --ok:#6FCF97;}}
+:root[data-theme="dark"]{
+  --bg:#15181B; --surface:#1F2428; --ink:#E9ECEE; --muted:#9AA3AA; --line:#343B41;
+  --hivis:#F2772F; --steel:#7FB2D6; --tag:#E2B63A; --late:#FF8A80; --ok:#6FCF97;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--steel);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+a{color:var(--steel)}
+header{padding:16px 0 4px}
+.back{display:inline-block;font-weight:600;text-decoration:none;font-size:15px;margin-bottom:6px}
+h1{font-family:var(--display);font-weight:700;font-size:38px;line-height:1;margin:0}
+.sub{color:var(--muted);font-size:15px;margin-top:2px}
+.tabs{display:flex;margin:14px 0 16px;border:2px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--surface)}
+.tabs button{flex:1;border:0;border-right:2px solid var(--ink);background:transparent;padding:10px 4px;cursor:pointer;
+  font-family:var(--display);font-weight:700;font-size:19px;line-height:1.1}
+.tabs button:last-child{border-right:0}
+.tabs button[aria-selected="true"]{background:var(--hivis);color:var(--hivis-ink)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
+.f.full{grid-column:1/-1}
+.f input,.f select{font-weight:400;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.chk input{width:18px;height:18px;accent-color:var(--hivis)}
+h2.t{font-family:var(--display);font-size:26px;margin:18px 0 8px}
+.group{font-family:var(--display);font-size:20px;background:var(--bg);border-left:6px solid var(--tag);
+  padding:6px 10px;border-radius:4px;margin:14px 0 6px}
+ul.bom{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.line{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;
+  display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.line.off{opacity:.42}
+.line input[type=checkbox]{width:20px;height:20px;accent-color:var(--hivis)}
+.nm{font-weight:600;overflow-wrap:anywhere}
+.sp{font-size:14px;color:var(--muted)}
+.qty{font-family:var(--display);font-weight:700;font-size:24px;white-space:nowrap;text-align:right;line-height:1.05}
+.qty small{display:block;font-family:var(--body);font-size:12px;font-weight:600;color:var(--muted)}
+.skurow{grid-column:1/-1;display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.skurow input{flex:1;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--bg);font-size:14px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;justify-content:center;z-index:5}
+.btn{border:0;border-radius:6px;padding:12px 18px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--hivis);color:var(--hivis-ink)}
+.btn.ghost{background:var(--bg);border:1px solid var(--line)}
+dialog{border:0;border-radius:10px;padding:0;width:min(600px,calc(100% - 24px));background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.sheet{padding:18px}
+.sheet h2{font-family:var(--display);font-size:26px;margin:0 0 10px}
+pre.sum{white-space:pre-wrap;background:var(--bg);border-radius:6px;padding:12px;font:14px/1.45 var(--body);max-height:55vh;overflow:auto;margin:0}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.note{font-size:13px;color:var(--muted);margin-top:10px}
+.callout{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--late);
+  border-radius:6px;padding:12px 14px;font-size:14px;margin-top:14px}
+.toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:8px 14px;border-radius:6px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+@media (max-width:420px){h1{font-size:32px}.grid{grid-template-columns:1fr}.tabs button{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="back" id="back" href="../index.html">&larr; Floor tracker</a>
+  <h1>Project takeoff</h1>
+  <div class="sub">Answer the questions, hand over the list</div>
+</header>
+
+<div class="tabs" role="tablist" id="tabs">
+  <button role="tab" data-p="deck" aria-selected="true">Deck</button>
+  <button role="tab" data-p="fence" aria-selected="false">Fence</button>
+  <button role="tab" data-p="wall" aria-selected="false">Wall</button>
+  <button role="tab" data-p="slab" aria-selected="false">Slab</button>
+</div>
+
+<div class="panel" id="inputs"></div>
+
+<h2 class="t">Material list</h2>
+<div id="bom"></div>
+
+<div class="callout">Planning estimate only. Footings, beams, joist sizing and anything permitted come off the customer's plans and local code — this list assumes those decisions are already made.</div>
+</div>
+
+<div class="bar">
+  <button class="btn ghost" id="resetBtn">Reset</button>
+  <button class="btn primary" id="copyBtn">Build list</button>
+</div>
+
+<dialog id="dlg">
+  <div class="sheet">
+    <h2>Material list</h2>
+    <pre class="sum" id="sumText"></pre>
+    <div class="row">
+      <button class="btn ghost" id="closeBtn">Close</button>
+      <button class="btn primary" id="copyText">Copy</button>
+    </div>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+const $ = s => document.querySelector(s);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const SKU_KEY = "takeoff:skus";
+let skus = {};
+try{ skus = JSON.parse(localStorage.getItem(SKU_KEY)||"{}"); }catch(e){ skus = {}; }
+let project = "deck";
+let off = {};
+
+function num(s){
+  if(typeof s==="number") return s;
+  s = String(s||"").trim().replace(/[”"″]/g,'"').replace(/[’']/g,"'");
+  if(!s) return 0;
+  const ft = s.match(/^(-?[\d.]+)\s*'\s*(.*)$/);
+  if(ft) return (parseFloat(ft[1])||0)*12 + num(ft[2].replace(/"/g,""));
+  s = s.replace(/"/g,"").trim();
+  const m = s.match(/^(-?\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if(m) return parseFloat(m[1])+parseFloat(m[2])/parseFloat(m[3]);
+  const f = s.match(/^(-?\d+)\s*\/\s*(\d+)$/);
+  if(f) return parseFloat(f[1])/parseFloat(f[2]);
+  const n = parseFloat(s); return isFinite(n)?n:0;
+}
+const r1 = n => Math.round(n*10)/10;
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),1700); }
+
+/* ---------- field definitions ---------- */
+const FIELDS = {
+  deck:[
+    {id:"a", l:"Deck length, boards run this way (ft)", v:"16"},
+    {id:"b", l:"Deck depth (ft)", v:"12"},
+    {id:"h", l:"Height off grade (in)", v:"36"},
+    {id:"oc", l:"Joist spacing (in OC)", v:"16", opts:["12","16","24"]},
+    {id:"bw", l:"Decking face width (in)", v:"5.5", opts:[["5.5","5½ — 2x6 / 5/4x6"],["5.375","5⅜ — composite"],["3.5","3½ — 2x4"]]},
+    {id:"len", l:"Decking stock length (ft)", v:"16", opts:["8","10","12","16","20"]},
+    {id:"joist", l:"Joist size", v:"2x8", opts:["2x6","2x8","2x10","2x12"]},
+    {id:"ledger", l:"Attached to house?", v:"yes", opts:[["yes","Yes — ledger"],["no","No — freestanding"]]},
+    {id:"rail", l:"Railing", v:"yes", opts:[["yes","Yes"],["no","No"]]},
+    {id:"steps", l:"Stair risers (0 for none)", v:"4"},
+    {id:"waste", l:"Waste %", v:"10"}
+  ],
+  fence:[
+    {id:"run", l:"Total run (ft)", v:"100"},
+    {id:"sp", l:"Post spacing (ft)", v:"8"},
+    {id:"ht", l:"Fence height (ft)", v:"6", opts:["3","4","5","6","8"]},
+    {id:"style", l:"Style", v:"privacy", opts:[["privacy","Privacy — no gap"],["picket","Picket — gapped"],["shadow","Shadowbox"]]},
+    {id:"pw", l:"Picket face width (in)", v:"5.5"},
+    {id:"gap", l:"Gap between pickets (in)", v:"0"},
+    {id:"rails", l:"Rails per section", v:"3", opts:["2","3"]},
+    {id:"gates", l:"Gates", v:"1"},
+    {id:"dia", l:"Post hole diameter (in)", v:"10"},
+    {id:"dep", l:"Post hole depth (in)", v:"30"}
+  ],
+  wall:[
+    {id:"len", l:"Wall length (ft)", v:"20"},
+    {id:"ht", l:"Wall height (ft)", v:"8", opts:["8","9","10"]},
+    {id:"oc", l:"Stud spacing (in OC)", v:"16", opts:["12","16","24"]},
+    {id:"size", l:"Stud size", v:"2x4", opts:["2x4","2x6"]},
+    {id:"corners", l:"Corners / intersections", v:"2"},
+    {id:"openings", l:"Door &amp; window openings", v:"1"},
+    {id:"onslab", l:"Bottom plate on concrete?", v:"yes", opts:[["yes","Yes — treated plate"],["no","No"]]},
+    {id:"cover", l:"Covering", v:"drywall", opts:[["drywall","Drywall, one side"],["drywall2","Drywall, both sides"],["sheath","Exterior sheathing"],["none","None"]]},
+    {id:"insul", l:"Insulate?", v:"yes", opts:[["yes","Yes"],["no","No"]]}
+  ],
+  slab:[
+    {id:"l", l:"Length (ft)", v:"12"},
+    {id:"w", l:"Width (ft)", v:"12"},
+    {id:"d", l:"Thickness (in)", v:"4"},
+    {id:"base", l:"Gravel base depth (in)", v:"4"},
+    {id:"rein", l:"Reinforcement", v:"mesh", opts:[["mesh","Wire mesh"],["rebar","#4 rebar grid, 18 in"],["none","None"]]},
+    {id:"bag", l:"Bag size", v:"0.6", opts:[["0.6","80 lb"],["0.45","60 lb"],["0.5","50 lb fast-set"]]},
+    {id:"forms", l:"Need form lumber?", v:"yes", opts:[["yes","Yes"],["no","No"]]}
+  ]
+};
+
+function renderInputs(){
+  const f = FIELDS[project];
+  $("#inputs").innerHTML = `<div class="grid">` + f.map(x=>{
+    const ctl = x.opts
+      ? `<select id="i_${x.id}">${x.opts.map(o=>{const val=Array.isArray(o)?o[0]:o,lab=Array.isArray(o)?o[1]:o;
+          return `<option value="${val}" ${val===x.v?"selected":""}>${lab}</option>`;}).join("")}</select>`
+      : `<input id="i_${x.id}" value="${x.v}" inputmode="decimal">`;
+    return `<label class="f${x.opts?"":""}">${x.l}${ctl}</label>`;
+  }).join("") + `</div>`;
+  f.forEach(x=>{
+    const e = $("#i_"+x.id);
+    e.addEventListener("input", build); e.addEventListener("change", build);
+  });
+}
+const g = id => { const e = $("#i_"+id); return e ? e.value : ""; };
+const gn = id => num(g(id));
+
+/* ---------- takeoffs ---------- */
+function deckBom(){
+  const A=gn("a"), B=gn("b"), H=gn("h"), oc=gn("oc"), bw=gn("bw"), L=gn("len"),
+        joist=g("joist"), ledger=g("ledger")==="yes", rail=g("rail")==="yes",
+        steps=Math.max(0,Math.round(gn("steps"))), waste=1+gn("waste")/100;
+  const out=[];
+  if(A<=0||B<=0) return out;
+  const rows = Math.ceil((B*12)/(bw+0.125));
+  const boards = Math.ceil(rows*Math.ceil(A/L)*waste);
+  const joists = Math.floor((A*12)/oc)+1;
+  const postCount = Math.ceil(A/8)+1;
+  const holeCuFt = Math.PI*Math.pow(12/2,2)*36/1728;
+  const ftgBags = Math.ceil(holeCuFt/0.6)*postCount;
+  const screws = rows*joists*2;
+  const railLen = A + (ledger ? 2*B : 2*B + A);
+
+  out.push(["Decking", `Decking, ${L} ft`, `${bw==5.375?"composite":"PT or cedar"} — ${rows} rows`, boards, "pc"]);
+  out.push(["Framing", `${joist} joists, ${Math.ceil(B)} ft`, `${oc}" OC, ground contact`, joists, "pc"]);
+  out.push(["Framing", `${joist} rim / band joist`, `outside edges`, ledger?3:4, "pc"]);
+  if(ledger) out.push(["Framing", `${joist} ledger, ${Math.ceil(A)} ft`, "ground contact", 1, "pc"]);
+  out.push(["Framing", `${joist} beam stock, ${Math.ceil(A)} ft`, "2-ply beam", 2, "pc"]);
+  out.push(["Framing", "6x6 posts", `cut to ${Math.max(1,Math.round(H/12))} ft plus burial`, postCount, "pc"]);
+  out.push(["Concrete", "Concrete mix, 80 lb", `12" x 36" footings`, ftgBags, "bag"]);
+  out.push(["Concrete", "Forming tubes, 12 in", "one per footing", postCount, "pc"]);
+  out.push(["Hardware", "Joist hangers", "match joist size", joists+2, "pc"]);
+  out.push(["Hardware", "Hanger nails, 1½ in", "1 lb per ~50 hangers", Math.ceil((joists+2)/50), "lb"]);
+  out.push(["Hardware", "Post bases", "standoff type", postCount, "pc"]);
+  if(ledger){
+    out.push(["Hardware", "Structural ledger screws", "staggered, 16 in", Math.ceil(A*12/16)*2, "pc"]);
+    out.push(["Hardware", `Ledger flashing, ${Math.ceil(A)} ft`, "with cap flashing", 1, "pc"]);
+  }
+  out.push(["Fasteners", "Deck screws / hidden clips", `about ${screws} fasteners`, Math.ceil(screws/350), "box"]);
+  if(rail){
+    const rposts = Math.ceil(railLen/6)+1;
+    out.push(["Railing", "4x4 rail posts", "6 ft spacing max", rposts, "pc"]);
+    out.push(["Railing", "2x4 rails", `${r1(railLen*2)} lin ft, top and bottom`, Math.ceil(railLen*2/8), "pc"]);
+    out.push(["Railing", "Balusters", "4 in max spacing", Math.ceil(railLen*12/4), "pc"]);
+    out.push(["Railing", "Post caps", "", rposts, "pc"]);
+    out.push(["Railing", "Rail connector hardware", "per post", rposts, "set"]);
+  }
+  if(steps>0){
+    out.push(["Stairs", "Stair stringers", `${steps} risers, 36 in wide`, 3, "pc"]);
+    out.push(["Stairs", "2x6 treads", "2 per step", steps*2, "pc"]);
+    out.push(["Stairs", "Stair rail kit", "handrail required", 1, "set"]);
+  }
+  out.push(["Finish", "End-cut preservative", "every field cut", 1, "qt"]);
+  return out;
+}
+
+function fenceBom(){
+  const run=gn("run"), sp=gn("sp"), ht=gn("ht"), style=g("style"),
+        pw=gn("pw"), gap=gn("gap"), rails=gn("rails"), gates=Math.max(0,Math.round(gn("gates"))),
+        dia=gn("dia"), dep=gn("dep");
+  const out=[];
+  if(run<=0||sp<=0) return out;
+  const sections = Math.ceil(run/sp);
+  const posts = sections+1+gates;
+  const postLen = Math.ceil(ht + dep/12);
+  const pitch = style==="picket" ? pw+Math.max(gap,1.5) : (style==="shadow" ? (pw+gap)*0.75 : pw+gap);
+  const pickets = pitch>0 ? Math.ceil((run*12)/pitch) : 0;
+  const holeCuFt = Math.PI*Math.pow(dia/2,2)*dep/1728 - Math.pow(3.5,2)*dep/1728;
+  const bags = Math.ceil(holeCuFt/0.6*posts);
+  out.push(["Posts", `4x4 posts, ${postLen} ft`, "ground contact treated", posts, "pc"]);
+  out.push(["Posts", "Post caps", "", sections+1, "pc"]);
+  out.push(["Concrete", "Fast-setting concrete, 50 lb", `${dia}" x ${dep}" holes`, Math.ceil(holeCuFt/0.5*posts), "bag"]);
+  out.push(["Framing", `2x4 rails, ${Math.min(sp,8)} ft`, `${rails} per section`, sections*rails, "pc"]);
+  out.push(["Pickets", `Pickets, ${ht} ft`, style==="privacy"?"butted tight":"gapped", pickets, "pc"]);
+  out.push(["Fasteners", "Exterior screws, 2½ in", "hot-dip or coated", Math.ceil(pickets*rails/400), "box"]);
+  out.push(["Fasteners", "Rail brackets or toe screws", "2 per rail end", sections*rails*2, "pc"]);
+  if(gates>0){
+    out.push(["Gates", "Gate hardware kit", "hinges and latch", gates, "kit"]);
+    out.push(["Gates", "Anti-sag kit or gate frame", "keeps the gate square", gates, "kit"]);
+  }
+  out.push(["Tools", "Post hole digger or auger rental", "check the rental desk", 1, "ea"]);
+  out.push(["Finish", "Stain or sealer", "after it dries out", Math.ceil(run*ht/250), "gal"]);
+  return out;
+}
+
+function wallBom(){
+  const L=gn("len"), H=gn("ht"), oc=gn("oc"), size=g("size"),
+        corners=Math.round(gn("corners")), openings=Math.round(gn("openings")),
+        onslab=g("onslab")==="yes", cover=g("cover"), insul=g("insul")==="yes";
+  const out=[];
+  if(L<=0) return out;
+  const field = Math.floor((L*12)/oc)+1;
+  const studs = field + corners*2 + openings*4;
+  const plateLf = L*3;
+  const area = L*H;
+  out.push(["Framing", `${size} studs, ${H} ft`, `${oc}" OC plus corners and openings`, studs, "pc"]);
+  out.push(["Framing", `${size} plate stock, 16 ft`, `${r1(plateLf)} lin ft — one bottom, double top`, Math.ceil((onslab?L*2:plateLf)/16), "pc"]);
+  if(onslab) out.push(["Framing", `${size} treated plate, 16 ft`, "required on concrete", Math.ceil(L/16), "pc"]);
+  if(openings>0){
+    out.push(["Framing", "Header stock", "size per span — verify", openings*2, "pc"]);
+    out.push(["Framing", "½ in plywood for header shims", `${size==="2x4"?"1 sheet covers several":"as needed"}`, 1, "sheet"]);
+  }
+  if(onslab) out.push(["Fasteners", "Concrete anchors", "per code, 6 ft max spacing", Math.ceil(L/4), "pc"]);
+  out.push(["Fasteners", "16d framing nails", "or 3 in screws", Math.ceil(studs/45), "lb"]);
+  if(cover==="drywall"||cover==="drywall2"){
+    const sides = cover==="drywall2"?2:1;
+    const sheets = Math.ceil(area*sides/32*1.1);
+    out.push(["Covering", "Drywall, 4x8", `${r1(area*sides)} sq ft`, sheets, "sheet"]);
+    out.push(["Covering", "Drywall screws, 1¼ in", "", Math.ceil(sheets/12), "lb"]);
+    out.push(["Covering", "Joint compound", "", Math.ceil(sheets/12), "bucket"]);
+    out.push(["Covering", "Joint tape", "about 38 ft per sheet", Math.ceil(sheets*38/250), "roll"]);
+  }
+  if(cover==="sheath"){
+    out.push(["Covering", "Sheathing, 4x8", `${r1(area)} sq ft`, Math.ceil(area/32*1.1), "sheet"]);
+    out.push(["Covering", "House wrap", "", Math.ceil(area/450), "roll"]);
+    out.push(["Fasteners", "8d ring shank nails", "6 in edges, 12 in field", 2, "lb"]);
+  }
+  if(insul){
+    out.push(["Insulation", size==="2x6"?"R-19 / R-21 batts":"R-13 / R-15 batts", `${r1(area)} sq ft`, Math.ceil(area/88), "bag"]);
+  }
+  return out;
+}
+
+function slabBom(){
+  const L=gn("l"), W=gn("w"), D=gn("d"), base=gn("base"), rein=g("rein"), bag=gn("bag"), forms=g("forms")==="yes";
+  const out=[];
+  if(L<=0||W<=0) return out;
+  const cuft = L*W*(D/12);
+  const bags = Math.ceil(cuft/bag);
+  const peri = 2*(L+W);
+  const baseCuft = L*W*(base/12);
+  out.push(["Concrete", `Concrete mix, ${bag==0.6?"80 lb":bag==0.45?"60 lb":"50 lb"}`, `${r1(cuft)} cu ft — ${(cuft/27).toFixed(2)} cu yd`, bags, "bag"]);
+  if(cuft/27 > 1) out.push(["Concrete", "Ready-mix quote", "usually cheaper past a yard", 1, "call"]);
+  if(base>0){
+    out.push(["Base", "Paver base or crushed stone, 0.5 cu ft", `${r1(baseCuft)} cu ft at ${base}" deep`, Math.ceil(baseCuft/0.5), "bag"]);
+    out.push(["Base", "Landscape fabric", `${r1(L*W)} sq ft`, Math.ceil(L*W/300), "roll"]);
+  }
+  if(rein==="mesh") out.push(["Reinforcement", "Wire mesh, 5x10 sheet", `${r1(L*W)} sq ft`, Math.ceil(L*W/50), "sheet"]);
+  if(rein==="rebar"){
+    const lf = (Math.floor(W*12/18)+1)*L + (Math.floor(L*12/18)+1)*W;
+    out.push(["Reinforcement", "#4 rebar, 20 ft", `${r1(lf)} lin ft on an 18 in grid`, Math.ceil(lf/20), "pc"]);
+    out.push(["Reinforcement", "Rebar ties and chairs", "", Math.ceil(lf/10), "pc"]);
+  }
+  if(forms){
+    out.push(["Forms", "2x4 form lumber, 12 ft", `${r1(peri)} lin ft perimeter`, Math.ceil(peri/12), "pc"]);
+    out.push(["Forms", "Wood stakes", "every 3 to 4 ft", Math.ceil(peri/3), "pc"]);
+    out.push(["Forms", "Form release or oil", "", 1, "ea"]);
+  }
+  out.push(["Finish", "Expansion joint material", `${r1(peri)} lin ft`, Math.ceil(peri/50), "roll"]);
+  out.push(["Tools", "Float, edger, screed board", "rental for larger pours", 1, "set"]);
+  out.push(["Finish", "Concrete sealer", `${r1(L*W)} sq ft`, Math.ceil(L*W/300), "gal"]);
+  return out;
+}
+
+const BUILD = {deck:deckBom, fence:fenceBom, wall:wallBom, slab:slabBom};
+let current = [];
+
+function build(){
+  current = BUILD[project]();
+  const groups = [];
+  current.forEach(row=>{ const gname=row[0]; let gr=groups.find(x=>x.name===gname); if(!gr){gr={name:gname,rows:[]};groups.push(gr);} gr.rows.push(row); });
+  $("#bom").innerHTML = groups.map(gr=>`
+    <div class="group">${esc(gr.name)}</div>
+    <ul class="bom">${gr.rows.map(([,item,spec,qty,unit])=>{
+      const key = project+"|"+item;
+      const isOff = !!off[key];
+      return `<li class="line ${isOff?"off":""}">
+        <input type="checkbox" ${isOff?"":"checked"} data-k="${esc(key)}" aria-label="Include ${esc(item)}">
+        <div><div class="nm">${esc(item)}</div>${spec?`<div class="sp">${esc(spec)}</div>`:""}</div>
+        <div class="qty">${qty}<small>${esc(unit)}</small></div>
+        <div class="skurow"><span>SKU</span><input value="${esc(skus[key]||"")}" data-sku="${esc(key)}" placeholder="add once, remembered"></div>
+      </li>`;
+    }).join("")}</ul>`).join("");
+}
+
+$("#bom").addEventListener("change", e=>{
+  const c = e.target.closest("[data-k]");
+  if(c){ off[c.dataset.k] = !c.checked; build(); return; }
+});
+$("#bom").addEventListener("input", e=>{
+  const s = e.target.closest("[data-sku]");
+  if(s){ skus[s.dataset.sku] = s.value.trim();
+    try{ localStorage.setItem(SKU_KEY, JSON.stringify(skus)); }catch(err){} }
+});
+
+$("#tabs").addEventListener("click", e=>{
+  const b = e.target.closest("[data-p]"); if(!b) return;
+  document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected", String(x===b)));
+  project = b.dataset.p; renderInputs(); build(); scrollTo({top:0,behavior:"smooth"});
+});
+$("#resetBtn").onclick = ()=>{ off={}; renderInputs(); build(); toast("Reset"); };
+
+function listText(){
+  const title = {deck:"Deck",fence:"Fence",wall:"Wall framing",slab:"Concrete slab"}[project];
+  const lines = [`${title} material list — ${new Date().toLocaleDateString()}`, ""];
+  let g = "";
+  current.forEach(([grp,item,spec,qty,unit])=>{
+    const key = project+"|"+item;
+    if(off[key]) return;
+    if(grp!==g){ lines.push(grp.toUpperCase()); g = grp; }
+    lines.push(`  ${qty} ${unit}  ${item}${skus[key]?`  (SKU ${skus[key]})`:""}${spec?` — ${spec}`:""}`);
+  });
+  lines.push("", "Estimate for planning. Sizing and spans per plans and local code.");
+  return lines.join("\n");
+}
+$("#copyBtn").onclick = ()=>{ $("#sumText").textContent = listText(); $("#dlg").showModal(); };
+$("#closeBtn").onclick = ()=>$("#dlg").close();
+$("#copyText").onclick = async ()=>{
+  try{ await navigator.clipboard.writeText($("#sumText").textContent); toast("List copied"); }
+  catch(e){ const r=document.createRange(); r.selectNodeContents($("#sumText")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast("Selected — copy from here"); }
+};
+
+if(/claude/.test(location.hostname)){ $("#back").href="https://claude.ai/artifact/5UGQQjf8QSRFYaHS24y8Dx"; }
+$("#back").target="_top";
+renderInputs(); build();
+})();
+</script>
+</body>
+</html>
