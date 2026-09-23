@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DS Floor Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8EAEB; --surface:#FFFFFF; --ink:#1B2024; --muted:#5E676E; --line:#CDD2D5;
+  --hivis:#E8601C; --hivis-ink:#FFFFFF; --steel:#2F5D7C; --tag:#F4C542; --tag-ink:#1B2024;
+  --late:#B3261E; --ok:#2E7D4F;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15181B; --surface:#1F2428; --ink:#E9ECEE; --muted:#9AA3AA; --line:#343B41;
+    --hivis:#F2772F; --steel:#7FB2D6; --tag:#E2B63A; --late:#FF8A80; --ok:#6FCF97;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15181B; --surface:#1F2428; --ink:#E9ECEE; --muted:#9AA3AA; --line:#343B41;
+  --hivis:#F2772F; --steel:#7FB2D6; --tag:#E2B63A; --late:#FF8A80; --ok:#6FCF97;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased;padding-bottom:96px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--steel);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+
+header{padding:20px 0 8px}
+.date{color:var(--muted);font-size:15px}
+h1{font-family:var(--display);font-weight:700;font-size:40px;line-height:1;margin:2px 0 0;letter-spacing:.2px}
+.sync{font-size:13px;color:var(--muted);margin-top:6px}
+
+/* Tab strip doubles as the day's count board */
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:16px 0 12px;border:2px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--surface)}
+.board button{border:0;background:transparent;padding:10px 4px 8px;cursor:pointer;text-align:center;border-right:2px solid var(--ink);position:relative}
+.board button:last-child{border-right:0}
+.board .n{display:block;font-family:var(--display);font-weight:700;font-size:34px;line-height:1}
+.board .l{display:block;font-size:13px;font-weight:600;margin-top:2px}
+.board .late{display:block;font-size:12px;color:var(--late);font-weight:600;min-height:17px}
+.board button[aria-selected="true"]{background:var(--hivis);color:var(--hivis-ink)}
+.board button[aria-selected="true"] .late{color:var(--hivis-ink)}
+
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.tools input[type=search],.tools select{flex:1 1 160px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.check{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);padding:4px 2px}
+.check input{width:18px;height:18px;accent-color:var(--hivis)}
+
+ul.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.item{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:6px;padding:12px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start}
+.item.hi{border-left-color:var(--hivis)}
+.item.haz{border-left-color:var(--late)}
+.item.done{opacity:.55}
+.loc{background:var(--tag);color:var(--tag-ink);font-family:var(--display);font-weight:700;border-radius:3px;padding:4px 6px;min-width:58px;text-align:center;line-height:1.05}
+.loc small{display:block;font-size:11px;font-weight:600}
+.loc b{display:block;font-size:20px}
+.loc.none{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.main{min-width:0;cursor:pointer}
+.title{font-weight:600;overflow-wrap:anywhere}
+.meta{font-size:14px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:2px}
+.meta .bad{color:var(--late);font-weight:600}
+.flag{font-size:12px;font-weight:600;border-radius:3px;padding:1px 6px;border:1px solid currentColor}
+.notes{font-size:14px;margin-top:4px;overflow-wrap:anywhere}
+.status{border:2px solid var(--steel);color:var(--steel);background:transparent;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.status.last{border-color:var(--ok);color:var(--ok)}
+
+.empty{text-align:center;padding:36px 16px;color:var(--muted);border:2px dashed var(--line);border-radius:6px}
+.empty button{margin-top:10px}
+
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:5}
+.btn{border:0;border-radius:6px;padding:12px 18px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--hivis);color:var(--hivis-ink);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.btn.ghost{background:var(--surface);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--late);border:1px solid var(--late)}
+
+dialog{border:0;border-radius:10px;padding:0;width:min(560px,calc(100% - 24px));background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.sheet{padding:18px}
+.sheet h2{font-family:var(--display);font-size:28px;margin:0 0 12px}
+.types{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.types label{flex:1 1 auto}
+.types input{position:absolute;opacity:0}
+.types span{display:block;text-align:center;padding:8px 10px;border:2px solid var(--line);border-radius:6px;font-weight:600;font-size:14px;cursor:pointer}
+.types input:checked+span{border-color:var(--hivis);background:var(--hivis);color:var(--hivis-ink)}
+.types input:focus-visible+span{outline:3px solid var(--steel)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
+.field.full{grid-column:1/-1}
+.field input,.field select,.field textarea{font-weight:400;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);width:100%}
+.field textarea{min-height:70px;resize:vertical}
+.row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap}
+.hint{font-size:12px;font-weight:400;color:var(--muted)}
+pre.sum{white-space:pre-wrap;background:var(--bg);border-radius:6px;padding:12px;font:14px/1.4 var(--body);max-height:50vh;overflow:auto;margin:0}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.toollink{display:inline-block;text-decoration:none;font-weight:600;font-size:14px;color:var(--ink);
+  background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--tag);border-radius:6px;padding:8px 12px}
+.withbtn{display:flex;gap:6px;align-items:stretch}
+.withbtn input{flex:1;min-width:0}
+.btn.small{padding:8px 12px;font-size:14px}
+.cam{position:relative;background:#0C0E10;border-radius:6px;overflow:hidden;aspect-ratio:4/3;display:none}
+.cam.on{display:block}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.reticle{position:absolute;inset:18% 8%;border:2px solid var(--hivis);border-radius:4px;box-shadow:0 0 0 2000px rgba(0,0,0,.28)}
+.reticle::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:var(--hivis);opacity:.9}
+.toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+@media (max-width:420px){
+  h1{font-size:34px}
+  .board .n{font-size:28px}
+  .board .l{font-size:12px}
+  .grid{grid-template-columns:1fr}
+  .item{grid-template-columns:auto 1fr;}
+  .item .status{grid-column:1/-1;justify-self:start}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="date" id="today"></div>
+    <h1>Floor tracker</h1>
+    <div class="sync" id="sync">Saved on this device</div>
+    <div class="toolbar">
+      <a class="toollink" id="d21link" href="tools/d21-d22-cheatsheet.html">Cheat sheet &rarr;</a>
+      <a class="toollink" id="takeofflink" href="tools/project-takeoff.html">Takeoff &rarr;</a>
+      <a class="toollink" id="overheadlink" href="tools/overhead-map.html">Overhead map &rarr;</a>
+    </div>
+  </header>
+
+  <div class="board" role="tablist" id="board"></div>
+
+  <div class="tools">
+    <input type="search" id="q" placeholder="Search SKU, item, notes" aria-label="Search">
+    <select id="deptFilter" aria-label="Filter by department"><option value="">All departments</option></select>
+    <label class="check"><input type="checkbox" id="showDone"> Show finished</label>
+  </div>
+
+  <ul class="list" id="list"></ul>
+</div>
+
+<div class="fab">
+  <button class="btn ghost" id="sumBtn">Summary</button>
+  <button class="btn ghost" id="scanBtn">Scan</button>
+  <button class="btn primary" id="addBtn">Add item</button>
+</div>
+
+<dialog id="edit">
+  <form class="sheet" id="form" method="dialog">
+    <h2 id="formTitle">Add item</h2>
+    <div class="types" role="radiogroup" aria-label="Type" id="typePick"></div>
+    <div class="grid">
+      <label class="field full"><span id="titleLbl">Item</span><input name="title" required autocomplete="off"></label>
+      <label class="field">Department<input name="dept" list="depts" autocomplete="off"></label>
+      <label class="field">SKU / PO
+        <span class="withbtn"><input name="sku" inputmode="numeric" autocomplete="off"><button type="button" class="btn ghost small" id="skuScan">Scan</button></span>
+      </label>
+      <label class="field">Aisle<input name="aisle" inputmode="numeric" autocomplete="off"></label>
+      <label class="field">Bay<input name="bay" inputmode="numeric" autocomplete="off"></label>
+      <label class="field" id="qtyF"><span id="qtyLbl">Qty</span><input name="qty" inputmode="numeric" autocomplete="off"><span class="hint" id="qtyHint"></span></label>
+      <label class="field"><span id="dueLbl">Due</span><input name="due" type="date"></label>
+      <label class="field">Status<select name="status" id="statusSel"></select></label>
+      <label class="field">Priority<select name="priority"><option value="normal">Normal</option><option value="high">High</option></select></label>
+      <label class="check full" id="hazF" style="grid-column:1/-1"><input type="checkbox" name="hazard"> Safety issue (blocked aisle, unsecured load, damaged beam)</label>
+      <label class="field full">Notes<textarea name="notes"></textarea></label>
+    </div>
+    <div class="row">
+      <button type="button" class="btn danger" id="delBtn" hidden>Delete</button>
+      <span style="flex:1"></span>
+      <button type="button" class="btn ghost" id="cancelBtn">Cancel</button>
+      <button type="submit" class="btn primary" id="saveBtn">Save item</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="scanDlg">
+  <div class="sheet">
+    <h2 id="scanTitle">Scan a shelf label</h2>
+    <div class="cam" id="cam">
+      <video id="video" playsinline muted></video>
+      <div class="reticle" aria-hidden="true"></div>
+    </div>
+    <p class="hint" id="scanMsg" aria-live="polite">Starting camera…</p>
+    <label class="field full" style="margin-top:8px">Or key the number in
+      <span class="withbtn">
+        <input id="manual" inputmode="numeric" autocomplete="off" placeholder="SKU or barcode">
+        <button type="button" class="btn primary small" id="manualGo">Use</button>
+      </span>
+    </label>
+    <p class="hint">A Bluetooth or wedge scanner works too: just scan while this page is open.</p>
+    <div class="row">
+      <span style="flex:1"></span>
+      <button class="btn ghost" id="scanClose">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="sumDlg">
+  <div class="sheet">
+    <h2>Shift summary</h2>
+    <p class="hint" style="margin:0 0 8px">Open items for the walk or the handoff to the next DS.</p>
+    <pre class="sum" id="sumText"></pre>
+    <div class="row">
+      <span style="flex:1"></span>
+      <button class="btn ghost" id="sumClose">Close</button>
+      <button class="btn primary" id="sumCopy">Copy text</button>
+    </div>
+  </div>
+</dialog>
+
+<datalist id="depts">
+  <option>Lumber</option><option>Building Materials</option><option>Flooring</option><option>Paint</option>
+  <option>Hardware</option><option>Plumbing</option><option>Electrical</option><option>Lighting</option>
+  <option>Garden</option><option>Kitchen &amp; Bath</option><option>Millwork</option><option>Appliances</option>
+  <option>Decor</option><option>Tools</option><option>Seasonal</option><option>Receiving</option>
+</datalist>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+const TYPES = {
+  ship:{label:"Shipments", one:"Shipment", title:"What's coming (vendor, load, item)", qty:"Pallets / units", due:"Arriving", statuses:["Expected","Arrived","Worked"]},
+  out:{label:"Outs", one:"Scanned out", title:"Item", qty:"On hand (OH)", due:"Follow up by", statuses:["Scanned out","Ordered","Located","Filled"]},
+  over:{label:"Overhead", one:"Overhead issue", title:"Issue (e.g. unlabeled pallet, overhang)", qty:"Pallets", due:"Fix by", statuses:["Reported","Scheduled","Fixed"]},
+  task:{label:"Tasks", one:"Task", title:"Task", qty:"Qty", due:"Due", statuses:["Open","In progress","Done"]}
+};
+const LS_KEY = "ds-floor-tracker:v1";
+let items = [];
+let tab = "ship";
+let editing = null;
+let db = null;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const todayStr = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const isDone = it => it.status === TYPES[it.type].statuses.at(-1);
+function outClass(i){
+  if(!i || i.type!=="out") return null;
+  const q = String(i.qty ?? "").trim();
+  if(q==="") return null;
+  const n = Number(q.replace(/[^0-9.-]/g,""));
+  if(!isFinite(n)) return null;
+  return n > 0 ? "Dirty" : "Clean";
+}
+const isLate = it => !isDone(it) && it.due && it.due < todayStr();
+const fmtDate = d => { if(!d) return ""; const [y,m,dd]=d.split("-").map(Number); const t=todayStr();
+  if(d===t) return "Today"; const dt=new Date(y,m-1,dd); return dt.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}); };
+
+$("#today").textContent = new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),1800); }
+
+/* ---------- storage: local first, shared db when available ---------- */
+function loadLocal(){ try{ items = JSON.parse(localStorage.getItem(LS_KEY)||"[]"); }catch(e){ items=[]; } }
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(items)); }catch(e){} }
+
+async function persist(it){
+  if(db){
+    try{ await db.collection("items").doc(it.id).set(it); }
+    catch(e){ toast(e && e.code==="quota_exceeded" ? "Storage is full. Delete finished items to add more." : "Couldn't save. Check your connection."); }
+  } else saveLocal();
+}
+async function remove(id){
+  if(db){ try{ await db.collection("items").doc(id).delete(); }catch(e){ toast("Couldn't delete. Try again."); } }
+  else saveLocal();
+}
+
+async function connect(){
+  if(!window.claude || !window.claude.use) return;
+  try{
+    const d = await window.claude.use("db");
+    if(!d) return;
+    db = d;
+    $("#sync").textContent = "Syncing…";
+    db.collection("items").onSnapshot(snap => {
+      items = snap.docs.map(x => x.data());
+      $("#sync").textContent = "Synced for everyone with this link";
+      render();
+    }, () => { $("#sync").textContent = "Sync paused. Reload to reconnect."; });
+  }catch(e){}
+}
+
+/* ---------- render ---------- */
+function render(){
+  const board = $("#board");
+  board.innerHTML = Object.entries(TYPES).map(([k,t])=>{
+    const open = items.filter(i=>i.type===k && !isDone(i));
+    const late = open.filter(isLate).length;
+    const dueToday = k==="ship" ? open.filter(i=>i.due===todayStr()).length : 0;
+    const sub = late ? `${late} late` : (dueToday ? `${dueToday} today` : "");
+    return `<button role="tab" aria-selected="${k===tab}" data-tab="${k}">
+      <span class="n">${open.length}</span><span class="l">${t.label}</span>
+      <span class="late" style="${!late&&dueToday?'color:inherit;opacity:.75':''}">${sub}</span></button>`;
+  }).join("");
+
+  const depts = [...new Set(items.map(i=>i.dept).filter(Boolean))].sort();
+  const df = $("#deptFilter"), cur = df.value;
+  df.innerHTML = `<option value="">All departments</option>` + depts.map(d=>`<option ${d===cur?"selected":""}>${esc(d)}</option>`).join("");
+
+  const q = $("#q").value.trim().toLowerCase();
+  const showDone = $("#showDone").checked;
+  let list = items.filter(i=>i.type===tab)
+    .filter(i=>showDone || !isDone(i))
+    .filter(i=>!df.value || i.dept===df.value)
+    .filter(i=>!q || [i.title,i.sku,i.notes,i.dept].join(" ").toLowerCase().includes(q));
+
+  list.sort((a,b)=> (isDone(a)-isDone(b)) || (isLate(b)-isLate(a)) || ((b.hazard?1:0)-(a.hazard?1:0))
+    || ((b.priority==="high")-(a.priority==="high")) || (a.due||"9999").localeCompare(b.due||"9999") || (b.createdAt-a.createdAt));
+
+  const ul = $("#list");
+  if(!list.length){
+    const t = TYPES[tab];
+    ul.innerHTML = `<li class="empty">${items.some(i=>i.type===tab) ? "Nothing matches these filters." : `No ${t.label.toLowerCase()} logged yet.`}<br>
+      <button class="btn primary" data-add="${tab}">Add ${t.one.toLowerCase()}</button></li>`;
+    return;
+  }
+  ul.innerHTML = list.map(i=>{
+    const t = TYPES[i.type], done = isDone(i), late = isLate(i);
+    const loc = (i.aisle||i.bay)
+      ? `<div class="loc">${i.aisle?`<small>Aisle</small><b>${esc(i.aisle)}</b>`:""}${i.bay?`<small>Bay ${esc(i.bay)}</small>`:""}</div>`
+      : `<div class="loc none"><small>No</small><b>loc</b></div>`;
+    const oc = outClass(i);
+    const meta = [
+      i.dept && `<span>${esc(i.dept)}</span>`,
+      i.sku && `<span>SKU ${esc(i.sku)}</span>`,
+      i.qty && `<span>${esc(t.qty)}: ${esc(i.qty)}</span>`,
+      oc && `<span class="flag" style="color:${oc==="Dirty"?"var(--late)":"var(--ok)"}">${oc} out</span>`,
+      i.due && `<span class="${late?"bad":""}">${esc(t.due)} ${esc(fmtDate(i.due))}${late?" (late)":""}</span>`,
+      i.hazard && `<span class="flag" style="color:var(--late)">Safety</span>`,
+      i.priority==="high" && `<span class="flag" style="color:var(--hivis)">High</span>`
+    ].filter(Boolean).join("");
+    return `<li class="item ${i.hazard?"haz":i.priority==="high"?"hi":""} ${done?"done":""}">
+      ${loc}
+      <div class="main" data-edit="${i.id}" role="button" tabindex="0" aria-label="Edit ${esc(i.title)}">
+        <div class="title">${esc(i.title)}</div>
+        <div class="meta">${meta}</div>
+        ${i.notes?`<div class="notes">${esc(i.notes)}</div>`:""}
+      </div>
+      <button class="status ${done?"last":""}" data-next="${i.id}" title="Move to next status">${esc(i.status)}</button>
+    </li>`;
+  }).join("");
+}
+
+/* ---------- editing ---------- */
+const form = $("#form");
+$("#typePick").innerHTML = Object.entries(TYPES).map(([k,t])=>
+  `<label><input type="radio" name="type" value="${k}"><span>${t.one}</span></label>`).join("");
+
+function applyType(type, status){
+  const t = TYPES[type];
+  $("#titleLbl").textContent = t.title;
+  $("#qtyLbl").textContent = t.qty;
+  $("#dueLbl").textContent = t.due;
+  $("#statusSel").innerHTML = t.statuses.map(s=>`<option ${s===status?"selected":""}>${s}</option>`).join("");
+  $("#hazF").style.display = (type==="over"||type==="task") ? "flex" : "none";
+  qtyHint();
+}
+function qtyHint(){
+  const h = $("#qtyHint");
+  const oc = outClass({type: form.type.value, qty: form.qty.value});
+  if(!oc){ h.style.color = "var(--muted)"; h.textContent = form.type.value==="out" ? "OH 0 marks it clean, any OH marks it dirty." : ""; return; }
+  if(oc==="Dirty"){ form.priority.value = "high"; h.textContent = "Dirty out — set to high priority."; h.style.color = "var(--late)"; }
+  else { h.textContent = "Clean out — nothing on hand."; h.style.color = "var(--ok)"; }
+}
+form.addEventListener("input", e=>{ if(e.target.name==="qty") qtyHint(); });
+form.addEventListener("change", e=>{ if(e.target.name==="type") applyType(e.target.value); });
+
+function openEdit(it, type, prefill){
+  editing = it || null;
+  form.reset();
+  const ty = it ? it.type : (type||tab);
+  form.type.value = ty;
+  applyType(ty, it ? it.status : TYPES[ty].statuses[0]);
+  if(it){ ["title","dept","sku","aisle","bay","qty","due","priority","notes"].forEach(k=>form[k].value = it[k]||""); form.priority.value = it.priority||"normal"; form.hazard.checked=!!it.hazard; }
+  else if(ty==="ship") form.due.value = todayStr();
+  $("#formTitle").textContent = it ? "Edit item" : "Add item";
+  $("#saveBtn").textContent = it ? "Save changes" : "Save item";
+  $("#delBtn").hidden = !it;
+  if(prefill) Object.entries(prefill).forEach(([k,v])=>{ if(form[k]) form[k].value = v; });
+  qtyHint();
+  if(!$("#edit").open) $("#edit").showModal();
+  setTimeout(()=>form.title.focus(),50);
+}
+
+form.addEventListener("submit", async e=>{
+  e.preventDefault();
+  const f = new FormData(form);
+  const now = Date.now();
+  const it = {
+    id: editing ? editing.id : ("i"+now.toString(36)+Math.random().toString(36).slice(2,7)),
+    type: f.get("type"),
+    title: f.get("title").trim(),
+    dept: f.get("dept").trim(), sku: f.get("sku").trim(),
+    aisle: f.get("aisle").trim(), bay: f.get("bay").trim(),
+    qty: f.get("qty").trim(), due: f.get("due"),
+    status: f.get("status"), priority: f.get("priority"),
+    hazard: !!f.get("hazard") && ["over","task"].includes(f.get("type")),
+    notes: f.get("notes").trim(),
+    createdAt: editing ? editing.createdAt : now, updatedAt: now
+  };
+  if(!it.title) return;
+  const oc = outClass(it);
+  if(oc){ it.cleanliness = oc; if(oc==="Dirty") it.priority = "high"; }
+  else delete it.cleanliness;
+  const idx = items.findIndex(x=>x.id===it.id);
+  if(idx>=0) items[idx]=it; else items.push(it);
+  tab = it.type;
+  $("#edit").close(); render();
+  toast(editing ? "Changes saved" : "Item saved");
+  await persist(it);
+});
+$("#cancelBtn").onclick = ()=>$("#edit").close();
+$("#delBtn").onclick = async ()=>{
+  if(!editing || !confirm("Delete this item?")) return;
+  const id = editing.id;
+  items = items.filter(x=>x.id!==id);
+  $("#edit").close(); render(); toast("Item deleted");
+  await remove(id);
+};
+
+/* ---------- interactions ---------- */
+document.addEventListener("click", async e=>{
+  const tb = e.target.closest("[data-tab]"); if(tb){ tab=tb.dataset.tab; render(); return; }
+  const ad = e.target.closest("[data-add]"); if(ad){ openEdit(null, ad.dataset.add); return; }
+  const ed = e.target.closest("[data-edit]"); if(ed){ openEdit(items.find(x=>x.id===ed.dataset.edit)); return; }
+  const nx = e.target.closest("[data-next]");
+  if(nx){
+    const it = items.find(x=>x.id===nx.dataset.next); if(!it) return;
+    const st = TYPES[it.type].statuses;
+    const next = st[(st.indexOf(it.status)+1) % st.length];
+    const upd = {...it, status: next, updatedAt: Date.now()};
+    items = items.map(x=>x.id===it.id?upd:x);
+    render(); toast(`Marked ${next.toLowerCase()}`);
+    await persist(upd);
+  }
+});
+document.addEventListener("keydown", e=>{
+  const ed = e.target.closest && e.target.closest("[data-edit]");
+  if(ed && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); ed.click(); }
+});
+$("#addBtn").onclick = ()=>openEdit(null, tab);
+$("#q").addEventListener("input", render);
+$("#deptFilter").addEventListener("change", render);
+$("#showDone").addEventListener("change", render);
+
+/* ---------- barcode scanning ---------- */
+const FORMATS = ["code_128","code_39","code_93","ean_13","ean_8","upc_a","upc_e","itf","codabar","qr_code","data_matrix"];
+let stream = null, detectTimer = null, zxReader = null, onScan = null, lastCode = "", lastAt = 0;
+
+function openScan(cb, title){
+  onScan = cb || null;
+  $("#scanTitle").textContent = title || "Scan a shelf label";
+  $("#manual").value = "";
+  $("#scanDlg").showModal();
+  startCamera();
+}
+function stopScan(){
+  clearInterval(detectTimer); detectTimer = null;
+  if(zxReader){ try{ zxReader.reset(); }catch(e){} zxReader = null; }
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
+  $("#video").srcObject = null;
+  $("#cam").classList.remove("on");
+}
+function camFail(msg){ stopScan(); $("#scanMsg").textContent = msg; setTimeout(()=>$("#manual").focus(),50); }
+
+async function startCamera(){
+  $("#scanMsg").textContent = "Starting camera…";
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+    return camFail("This browser won't open the camera here. Key the number in instead.");
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1280}}});
+  }catch(err){
+    const n = err && err.name;
+    if(n==="NotAllowedError") return camFail("Camera access was blocked. Allow the camera for this page, or key the number in.");
+    if(n==="NotFoundError") return camFail("No camera found on this device. Key the number in instead.");
+    return camFail("The camera didn't start. Key the number in instead.");
+  }
+  const v = $("#video");
+  v.srcObject = stream; $("#cam").classList.add("on");
+  try{ await v.play(); }catch(e){}
+  $("#scanMsg").textContent = "Hold the label inside the box.";
+  if("BarcodeDetector" in window){
+    try{
+      const det = new window.BarcodeDetector({formats: FORMATS});
+      detectTimer = setInterval(async ()=>{
+        if(!stream || v.readyState < 2) return;
+        try{ const hits = await det.detect(v); if(hits && hits.length) gotCode(hits[0].rawValue); }catch(e){}
+      }, 250);
+      return;
+    }catch(e){}
+  }
+  loadZxing();
+}
+
+function loadZxing(){
+  const run = ()=>{
+    try{
+      zxReader = new window.ZXing.BrowserMultiFormatReader();
+      zxReader.decodeFromStream(stream, $("#video"), (res)=>{ if(res) gotCode(res.getText()); });
+      $("#scanMsg").textContent = "Hold the label inside the box.";
+    }catch(e){ camFail("Scanning isn't supported in this browser. Key the number in instead."); }
+  };
+  if(window.ZXing) return run();
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
+  s.onload = run;
+  s.onerror = ()=>camFail("Couldn't load the scanner. Key the number in instead.");
+  document.head.appendChild(s);
+}
+
+function gotCode(raw){
+  const code = String(raw||"").trim();
+  if(!code) return;
+  const now = Date.now();
+  if(code===lastCode && now-lastAt < 2500) return;
+  lastCode = code; lastAt = now;
+  if(navigator.vibrate) navigator.vibrate(40);
+  const cb = onScan; onScan = null;
+  stopScan(); $("#scanDlg").close();
+  if(cb) cb(code); else lookup(code);
+}
+
+function lookup(code){
+  const open = items.filter(i=>i.sku===code);
+  const hit = open.find(i=>!isDone(i)) || open[0];
+  if(hit){ tab = hit.type; render(); openEdit(hit); toast(`Already logged in ${TYPES[hit.type].label}`); }
+  else { openEdit(null, tab, {sku: code}); toast("New item — SKU filled in"); }
+}
+
+$("#scanBtn").onclick = ()=>openScan(null, "Scan a shelf label");
+$("#skuScan").onclick = ()=>openScan(code=>{ form.sku.value = code; toast("SKU scanned"); }, "Scan for this item");
+$("#scanClose").onclick = ()=>{ stopScan(); onScan=null; $("#scanDlg").close(); };
+$("#scanDlg").addEventListener("close", stopScan);
+$("#manualGo").onclick = ()=>{ const v=$("#manual").value.trim(); if(v) gotCode(v); };
+$("#manual").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#manualGo").click(); } });
+
+/* Hardware (wedge) scanners type fast and finish with Enter */
+let wedge = "", wedgeAt = 0;
+document.addEventListener("keydown", e=>{
+  const t = e.target;
+  if(t && (t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT")) return;
+  const now = Date.now();
+  if(now - wedgeAt > 120) wedge = "";
+  wedgeAt = now;
+  if(e.key.length===1 && /[\w-]/.test(e.key)) wedge += e.key;
+  else if(e.key==="Enter" && wedge.length>=6){ const c=wedge; wedge=""; gotCode(c); }
+});
+
+/* ---------- shift summary ---------- */
+function summary(){
+  const lines = [`DS summary for ${new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})}`];
+  const hazards = items.filter(i=>i.hazard && !isDone(i));
+  if(hazards.length){ lines.push("", "SAFETY"); hazards.forEach(i=>lines.push(`- ${line(i)}`)); }
+  for(const [k,t] of Object.entries(TYPES)){
+    const open = items.filter(i=>i.type===k && !isDone(i) && !i.hazard);
+    if(!open.length) continue;
+    lines.push("", `${t.label} (${open.length} open)`);
+    open.sort((a,b)=>(a.due||"9999").localeCompare(b.due||"9999")).forEach(i=>lines.push(`- ${line(i)}`));
+  }
+  if(lines.length===1) lines.push("", "No open items.");
+  return lines.join("\n");
+}
+function line(i){
+  const t = TYPES[i.type];
+  const loc = [i.aisle&&`A${i.aisle}`, i.bay&&`B${i.bay}`].filter(Boolean).join("-");
+  return [i.title, i.dept, loc, i.sku&&`SKU ${i.sku}`, i.qty&&`${t.qty} ${i.qty}`, outClass(i)&&`${outClass(i).toUpperCase()}`, `[${i.status}]`,
+    i.due&&`${t.due.toLowerCase()} ${fmtDate(i.due)}${isLate(i)?" LATE":""}`].filter(Boolean).join(", ");
+}
+$("#sumBtn").onclick = ()=>{ $("#sumText").textContent = summary(); $("#sumDlg").showModal(); };
+$("#sumClose").onclick = ()=>$("#sumDlg").close();
+$("#sumCopy").onclick = async ()=>{
+  const txt = $("#sumText").textContent;
+  try{ await navigator.clipboard.writeText(txt); toast("Summary copied"); }
+  catch(e){ const r=document.createRange(); r.selectNodeContents($("#sumText")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast("Text selected. Copy it from here."); }
+};
+
+loadLocal();
+if(/claude/.test(location.hostname)){
+  const urls = {
+    d21link: "https://claude.ai/artifact/Ntq7wfLde3LbmfSHoLGEzV",
+    takeofflink: "https://claude.ai/artifact/HjE22LSo881Qm9uFwmAzbw",
+    overheadlink: "https://claude.ai/artifact/6QBjmAhcw5J8ysRMNzLMrW"
+  };
+  Object.entries(urls).forEach(([id,u])=>{ const a=$("#"+id); if(a){ a.href=u; a.target="_top"; } });
+}
+render();
+connect();
+})();
+</script>
+</body>
+</html>
