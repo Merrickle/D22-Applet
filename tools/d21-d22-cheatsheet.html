@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>D21 / D22 Cheat Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8EAEB; --surface:#FFFFFF; --ink:#1B2024; --muted:#5E676E; --line:#CDD2D5;
+  --hivis:#E8601C; --hivis-ink:#FFFFFF; --steel:#2F5D7C; --tag:#F4C542; --tag-ink:#1B2024;
+  --late:#B3261E; --ok:#2E7D4F;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#15181B; --surface:#1F2428; --ink:#E9ECEE; --muted:#9AA3AA; --line:#343B41;
+  --hivis:#F2772F; --steel:#7FB2D6; --tag:#E2B63A; --late:#FF8A80; --ok:#6FCF97;}}
+:root[data-theme="dark"]{
+  --bg:#15181B; --surface:#1F2428; --ink:#E9ECEE; --muted:#9AA3AA; --line:#343B41;
+  --hivis:#F2772F; --steel:#7FB2D6; --tag:#E2B63A; --late:#FF8A80; --ok:#6FCF97;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--steel);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+a{color:var(--steel)}
+
+header{padding:16px 0 4px}
+.back{display:inline-block;font-weight:600;text-decoration:none;font-size:15px;margin-bottom:6px}
+h1{font-family:var(--display);font-weight:700;font-size:38px;line-height:1;margin:0}
+.sub{color:var(--muted);font-size:15px;margin-top:2px}
+
+.tabs{display:flex;gap:0;margin:14px 0 16px;border:2px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--surface)}
+.tabs button{flex:1;border:0;border-right:2px solid var(--ink);background:transparent;padding:10px 4px;cursor:pointer;
+  font-family:var(--display);font-weight:700;font-size:19px;line-height:1.1}
+.tabs button:last-child{border-right:0}
+.tabs button[aria-selected="true"]{background:var(--hivis);color:var(--hivis-ink)}
+
+section[hidden]{display:none}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;overflow:hidden}
+.card>summary{list-style:none;cursor:pointer;padding:12px 14px;font-family:var(--display);font-weight:700;font-size:22px;
+  display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card>summary::-webkit-details-marker{display:none}
+.card>summary::after{content:"+";color:var(--hivis);font-size:26px;line-height:1}
+.card[open]>summary::after{content:"–"}
+.card[open]>summary{border-bottom:1px solid var(--line)}
+.body{padding:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
+.f.full{grid-column:1/-1}
+.f input,.f select{font-weight:400;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.hint{font-size:13px;font-weight:400;color:var(--muted)}
+.out{margin-top:12px;border-left:6px solid var(--hivis);background:var(--bg);border-radius:4px;padding:10px 12px}
+.out .big{font-family:var(--display);font-weight:700;font-size:30px;line-height:1.05}
+.out ul{margin:6px 0 0;padding-left:18px;font-size:15px}
+.out li{margin:2px 0}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+
+h2.t{font-family:var(--display);font-size:26px;margin:20px 0 6px}
+h2.t:first-child{margin-top:4px}
+.tblwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;min-width:340px;font-size:15px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--display);font-size:17px;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.k{font-weight:600}
+.callout{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--tag);border-radius:6px;padding:12px 14px;margin-bottom:12px;font-size:15px}
+.callout b{font-family:var(--display);font-size:19px;display:block;margin-bottom:2px}
+.callout.warn{border-left-color:var(--late)}
+footer{color:var(--muted);font-size:13px;padding:18px 0 8px}
+@media (max-width:420px){
+  h1{font-size:32px}
+  .grid{grid-template-columns:1fr}
+  .tabs button{font-size:16px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="back" id="back" href="../index.html">&larr; Floor tracker</a>
+  <h1>D21 / D22 cheat sheet</h1>
+  <div class="sub">Lumber &amp; building materials — quick math for the aisle</div>
+</header>
+
+<div class="tabs" role="tablist" id="tabs">
+  <button role="tab" data-t="calc" aria-selected="true">Calcs</button>
+  <button role="tab" data-t="lumber" aria-selected="false">Lumber</button>
+  <button role="tab" data-t="concrete" aria-selected="false">Concrete</button>
+  <button role="tab" data-t="ref" aria-selected="false">Reference</button>
+</div>
+
+<!-- ================= CALCULATORS ================= -->
+<section id="calc">
+
+<details class="card" open>
+  <summary>Board feet &amp; price</summary>
+  <div class="body">
+    <div class="grid">
+      <label class="f">Nominal thickness (in)<input id="bf_t" value="2" inputmode="decimal"></label>
+      <label class="f">Nominal width (in)<input id="bf_w" value="6" inputmode="decimal"></label>
+      <label class="f">Length (ft)<input id="bf_l" value="8" inputmode="decimal"></label>
+      <label class="f">Pieces<input id="bf_q" value="1" inputmode="numeric"></label>
+      <label class="f full">Price per board foot ($, optional)<input id="bf_p" inputmode="decimal" placeholder="e.g. 1.15"></label>
+    </div>
+    <div class="out" id="bf_out"></div>
+    <p class="note">Board feet always use the nominal size (a 2x6 counts as 2&times;6), not the actual 1½&times;5½.</p>
+  </div>
+</details>
+
+<details class="card">
+  <summary>Deck boards, joists &amp; screws</summary>
+  <div class="body">
+    <div class="grid">
+      <label class="f">Deck length, along boards (ft)<input id="dk_a" value="16" inputmode="decimal"></label>
+      <label class="f">Deck depth, across boards (ft)<input id="dk_b" value="12" inputmode="decimal"></label>
+      <label class="f">Board face width (in)<select id="dk_bw">
+        <option value="5.5">5½ — 2x6 / 5/4x6</option><option value="3.5">3½ — 2x4</option>
+        <option value="5.375">5⅜ — composite</option><option value="7.25">7¼ — 2x8</option></select></label>
+      <label class="f">Gap between boards (in)<input id="dk_g" value="1/8" inputmode="text"></label>
+      <label class="f">Board stock length (ft)<select id="dk_len">
+        <option>8</option><option selected>12</option><option>16</option><option>20</option></select></label>
+      <label class="f">Joist spacing (in OC)<select id="dk_oc">
+        <option>12</option><option selected>16</option><option>24</option></select></label>
+      <label class="f full">Waste %<input id="dk_waste" value="10" inputmode="numeric"></label>
+    </div>
+    <div class="out" id="dk_out"></div>
+    <p class="note">Composite decking usually wants 16" OC straight, 12" OC on a 45. Check the board's own instructions.</p>
+  </div>
+</details>
+
+<details class="card">
+  <summary>Wall framing</summary>
+  <div class="body">
+    <div class="grid">
+      <label class="f">Wall length (ft)<input id="wl_l" value="20" inputmode="decimal"></label>
+      <label class="f">Stud spacing (in OC)<select id="wl_oc"><option>12</option><option selected>16</option><option>24</option></select></label>
+      <label class="f">Corners / intersections<input id="wl_c" value="2" inputmode="numeric"></label>
+      <label class="f">Door &amp; window openings<input id="wl_o" value="0" inputmode="numeric"></label>
+      <label class="f full">Plates: top plates<select id="wl_tp"><option value="2" selected>Double top (2)</option><option value="1">Single top (1)</option></select></label>
+    </div>
+    <div class="out" id="wl_out"></div>
+    <p class="note">Openings add roughly 4 pieces each (two kings, two jacks) plus header stock — not counted here.</p>
+  </div>
+</details>
+
+<details class="card">
+  <summary>Concrete: slab, footing &amp; post holes</summary>
+  <div class="body">
+    <label class="f full" style="margin-bottom:10px">Pour type<select id="cc_mode">
+      <option value="slab" selected>Slab / rectangular footing</option>
+      <option value="hole">Round post holes</option>
+      <option value="tube">Sonotube / column</option></select></label>
+    <div class="grid" id="cc_slab">
+      <label class="f">Length (ft)<input id="cc_l" value="10" inputmode="decimal"></label>
+      <label class="f">Width (ft)<input id="cc_w" value="10" inputmode="decimal"></label>
+      <label class="f full">Thickness (in)<input id="cc_d" value="4" inputmode="decimal"></label>
+    </div>
+    <div class="grid" id="cc_round" hidden>
+      <label class="f">Hole diameter (in)<input id="cc_dia" value="10" inputmode="decimal"></label>
+      <label class="f">Hole depth (in)<input id="cc_dep" value="24" inputmode="decimal"></label>
+      <label class="f">Number of holes<input id="cc_n" value="1" inputmode="numeric"></label>
+      <label class="f">Post in the hole<select id="cc_post">
+        <option value="0" selected>None / column</option>
+        <option value="3.5">4x4 (3½)</option><option value="5.5">6x6 (5½)</option>
+        <option value="round4">4" round</option></select></label>
+    </div>
+    <label class="f full" style="margin-top:10px">Bag size<select id="cc_bag">
+      <option value="0.6" selected>80 lb — 0.60 cu ft</option>
+      <option value="0.45">60 lb — 0.45 cu ft</option>
+      <option value="0.375">50 lb — 0.375 cu ft</option>
+      <option value="0.30">40 lb — 0.30 cu ft</option>
+      <option value="0.5">Fast-setting 50 lb — 0.50 cu ft</option></select></label>
+    <div class="out" id="cc_out"></div>
+    <p class="note">Bag yields are the printed averages. Ordering ready-mix? Anything over about 1 cu yd is usually cheaper by truck.</p>
+  </div>
+</details>
+
+<details class="card">
+  <summary>Sheet goods: plywood, OSB, drywall</summary>
+  <div class="body">
+    <div class="grid">
+      <label class="f">Area length (ft)<input id="sh_l" value="12" inputmode="decimal"></label>
+      <label class="f">Area height / width (ft)<input id="sh_h" value="8" inputmode="decimal"></label>
+      <label class="f">Surfaces (walls, sides)<input id="sh_n" value="1" inputmode="numeric"></label>
+      <label class="f">Sheet size<select id="sh_sz">
+        <option value="32" selected>4 x 8 — 32 sq ft</option>
+        <option value="40">4 x 10 — 40 sq ft</option>
+        <option value="48">4 x 12 — 48 sq ft</option></select></label>
+      <label class="f full">Waste %<input id="sh_waste" value="10" inputmode="numeric"></label>
+    </div>
+    <div class="out" id="sh_out"></div>
+  </div>
+</details>
+
+<details class="card">
+  <summary>Bulk: mulch, soil, sand &amp; gravel</summary>
+  <div class="body">
+    <div class="grid">
+      <label class="f">Area length (ft)<input id="bk_l" value="20" inputmode="decimal"></label>
+      <label class="f">Area width (ft)<input id="bk_w" value="10" inputmode="decimal"></label>
+      <label class="f">Depth (in)<input id="bk_d" value="3" inputmode="decimal"></label>
+      <label class="f">Bag size<select id="bk_bag">
+        <option value="2" selected>2 cu ft (mulch)</option>
+        <option value="1.5">1.5 cu ft (mulch / soil)</option>
+        <option value="0.75">0.75 cu ft (stone)</option>
+        <option value="0.5">0.5 cu ft (50 lb sand / paver base)</option></select></label>
+    </div>
+    <div class="out" id="bk_out"></div>
+    <p class="note">One cubic yard covers about 108 sq ft at 3" deep, 162 sq ft at 2".</p>
+  </div>
+</details>
+
+<details class="card">
+  <summary>Fence run</summary>
+  <div class="body">
+    <div class="grid">
+      <label class="f">Run length (ft)<input id="fn_l" value="50" inputmode="decimal"></label>
+      <label class="f">Post spacing (ft)<input id="fn_s" value="8" inputmode="decimal"></label>
+      <label class="f">Picket face width (in)<input id="fn_pw" value="5.5" inputmode="decimal"></label>
+      <label class="f">Picket gap (in)<input id="fn_pg" value="0" inputmode="text"></label>
+      <label class="f">Rails per section<select id="fn_r"><option>2</option><option selected>3</option></select></label>
+      <label class="f">Hole: dia x depth (in)<input id="fn_h" value="10 x 30" inputmode="text"></label>
+    </div>
+    <div class="out" id="fn_out"></div>
+    <p class="note">Rule of thumb for post depth: a third of the post above grade, below the frost line, whichever is deeper.</p>
+  </div>
+</details>
+
+<details class="card">
+  <summary>Measure converter</summary>
+  <div class="body">
+    <div class="grid">
+      <label class="f full">Type a measurement<input id="cv_in" value="8 5/8" inputmode="text" placeholder='e.g. 8 5/8, 12.375, 6&apos; 4"'></label>
+    </div>
+    <div class="out" id="cv_out"></div>
+    <p class="note">Accepts fractions, decimals and feet-inches. Rounds to the nearest 1/16.</p>
+  </div>
+</details>
+
+</section>
+
+<!-- ================= LUMBER ================= -->
+<section id="lumber" hidden>
+  <h2 class="t">Nominal vs actual</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Nominal</th><th>Actual (dry, S4S)</th></tr>
+    <tr><td class="k">1x2</td><td>¾ x 1½</td></tr>
+    <tr><td class="k">1x4</td><td>¾ x 3½</td></tr>
+    <tr><td class="k">1x6</td><td>¾ x 5½</td></tr>
+    <tr><td class="k">1x8</td><td>¾ x 7¼</td></tr>
+    <tr><td class="k">1x10</td><td>¾ x 9¼</td></tr>
+    <tr><td class="k">1x12</td><td>¾ x 11¼</td></tr>
+    <tr><td class="k">5/4x6 decking</td><td>1 x 5½</td></tr>
+    <tr><td class="k">2x2</td><td>1½ x 1½</td></tr>
+    <tr><td class="k">2x4</td><td>1½ x 3½</td></tr>
+    <tr><td class="k">2x6</td><td>1½ x 5½</td></tr>
+    <tr><td class="k">2x8</td><td>1½ x 7¼</td></tr>
+    <tr><td class="k">2x10</td><td>1½ x 9¼</td></tr>
+    <tr><td class="k">2x12</td><td>1½ x 11¼</td></tr>
+    <tr><td class="k">4x4</td><td>3½ x 3½</td></tr>
+    <tr><td class="k">4x6</td><td>3½ x 5½</td></tr>
+    <tr><td class="k">6x6</td><td>5½ x 5½</td></tr>
+  </table></div>
+  <p class="note">Rough-sawn, green and timber over 6" can run different. Measure the actual piece when a customer is matching existing work.</p>
+
+  <h2 class="t">Pressure treated: which one</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Use category</th><th>Where it goes</th></tr>
+    <tr><td class="k">Above ground</td><td>Rails, pickets, decking boards that drain and dry. Not for anything touching soil.</td></tr>
+    <tr><td class="k">Ground contact</td><td>Posts, joists and beams near grade, anything on or in soil, or where it can't dry out. Also the safe call for critical framing.</td></tr>
+    <tr><td class="k">Permanent wood foundation</td><td>Heavier retention again, for structural foundation use. Special order in most stores.</td></tr>
+  </table></div>
+  <div class="callout"><b>Cut ends</b>Every field cut or bore in treated lumber needs an end-cut preservative brushed on, even on ground contact stock.</div>
+
+  <h2 class="t">Fasteners with treated wood</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Fastener</th><th>Call</th></tr>
+    <tr><td class="k">Hot-dip galvanized</td><td>Minimum for exterior treated wood.</td></tr>
+    <tr><td class="k">Stainless</td><td>Best life, and the usual pick within a few miles of salt water or with cedar and redwood staining concerns.</td></tr>
+    <tr><td class="k">Electro-galvanized / bright</td><td>Interior dry only. It will streak and fail outdoors.</td></tr>
+    <tr><td class="k">Aluminum</td><td>Don't. Modern copper-based treatments corrode aluminum flashing and fasteners in contact.</td></tr>
+  </table></div>
+
+  <h2 class="t">Nail sizes</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Penny</th><th>Length</th><th>Typical use</th></tr>
+    <tr><td class="k">6d</td><td>2"</td><td>Trim, thin stock</td></tr>
+    <tr><td class="k">8d</td><td>2½"</td><td>Sheathing, subfloor, toe-nailing</td></tr>
+    <tr><td class="k">10d</td><td>3"</td><td>Framing, joist hangers (use hanger nails)</td></tr>
+    <tr><td class="k">16d</td><td>3½"</td><td>Face-nailing 2x framing, plates</td></tr>
+    <tr><td class="k">Hanger nails</td><td>1½" or 2½"</td><td>Only these in a Simpson hanger — never drywall or deck screws</td></tr>
+  </table></div>
+
+  <div class="callout warn"><b>Spans: look them up, don't guess</b>
+  Joist, rafter and beam spans change with species, grade, spacing, load and local code, so there's no single number to memorize. Use the span tables on the in-aisle cards, the IRC deck tables (R507) or AWC's DCA6, and send anything unusual to a designer or the permit office.</div>
+</section>
+
+<!-- ================= CONCRETE ================= -->
+<section id="concrete" hidden>
+  <h2 class="t">Bag yields</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Bag</th><th>Yield</th><th>Bags per cu yd</th></tr>
+    <tr><td class="k">80 lb</td><td>0.60 cu ft</td><td>45</td></tr>
+    <tr><td class="k">60 lb</td><td>0.45 cu ft</td><td>60</td></tr>
+    <tr><td class="k">50 lb fast-setting</td><td>0.50 cu ft</td><td>54</td></tr>
+    <tr><td class="k">40 lb</td><td>0.30 cu ft</td><td>90</td></tr>
+  </table></div>
+  <p class="note">1 cubic yard = 27 cubic feet. Slab math: sq ft &times; thickness in inches &divide; 12 = cubic feet.</p>
+
+  <h2 class="t">Slab quick reference (4" thick)</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Slab</th><th>Sq ft</th><th>Cu ft</th><th>80 lb bags</th></tr>
+    <tr><td class="k">4 x 4</td><td>16</td><td>5.3</td><td>9</td></tr>
+    <tr><td class="k">4 x 8</td><td>32</td><td>10.7</td><td>18</td></tr>
+    <tr><td class="k">8 x 8</td><td>64</td><td>21.3</td><td>36</td></tr>
+    <tr><td class="k">10 x 10</td><td>100</td><td>33.3</td><td>56</td></tr>
+    <tr><td class="k">12 x 12</td><td>144</td><td>48.0</td><td>80</td></tr>
+    <tr><td class="k">20 x 20</td><td>400</td><td>133.3</td><td>223 — quote ready-mix</td></tr>
+  </table></div>
+
+  <h2 class="t">Post holes (80 lb bags per hole)</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Hole</th><th>Empty</th><th>With 4x4</th><th>With 6x6</th></tr>
+    <tr><td class="k">8" x 24"</td><td>1.5</td><td>1</td><td>0.5</td></tr>
+    <tr><td class="k">10" x 24"</td><td>2</td><td>2</td><td>1.5</td></tr>
+    <tr><td class="k">10" x 30"</td><td>2.5</td><td>2</td><td>1.5</td></tr>
+    <tr><td class="k">12" x 36"</td><td>4</td><td>4</td><td>3</td></tr>
+  </table></div>
+  <p class="note">Rounded up to the half bag. Most customers buy whole bags, so round again at the register.</p>
+
+  <h2 class="t">Rebar &amp; mesh</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Size</th><th>Diameter</th><th>Common use</th></tr>
+    <tr><td class="k">#3</td><td>⅜"</td><td>Slabs, walkways, small footings</td></tr>
+    <tr><td class="k">#4</td><td>½"</td><td>Driveways, footings, walls</td></tr>
+    <tr><td class="k">#5</td><td>⅝"</td><td>Heavier footings and walls</td></tr>
+    <tr><td class="k">6x6 10/10 mesh</td><td>—</td><td>Flatwork crack control</td></tr>
+  </table></div>
+
+  <h2 class="t">Mixes: which bag</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Product</th><th>Use it for</th></tr>
+    <tr><td class="k">Concrete mix</td><td>General 2"+ pours: slabs, footings, setting posts</td></tr>
+    <tr><td class="k">Fast-setting</td><td>Posts and small repairs, sets in minutes; can be poured dry in the hole and watered</td></tr>
+    <tr><td class="k">High-early / 5000 psi</td><td>Driveways, heavy loads, cold-weather pours needing early strength</td></tr>
+    <tr><td class="k">Sand mix</td><td>Thin repairs under 2", bedding, grout</td></tr>
+    <tr><td class="k">Mortar / Type S vs N</td><td>Brick and block. S for below grade and structural, N for general above-grade</td></tr>
+  </table></div>
+</section>
+
+<!-- ================= REFERENCE ================= -->
+<section id="ref" hidden>
+  <h2 class="t">Sheet goods: actual thickness</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Called</th><th>Actual</th></tr>
+    <tr><td class="k">¼"</td><td>7/32 or ¼</td></tr>
+    <tr><td class="k">⅜"</td><td>11/32</td></tr>
+    <tr><td class="k">½"</td><td>15/32</td></tr>
+    <tr><td class="k">⅝"</td><td>19/32</td></tr>
+    <tr><td class="k">¾"</td><td>23/32</td></tr>
+  </table></div>
+  <p class="note">Sanded plywood and hardwood ply run true or close to it, sheathing and OSB run under. It matters for dado and door jamb work.</p>
+
+  <h2 class="t">Sheets per area</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Area</th><th>4x8 sheets</th><th>4x12 sheets</th></tr>
+    <tr><td class="k">100 sq ft</td><td>4</td><td>3</td></tr>
+    <tr><td class="k">200 sq ft</td><td>7</td><td>5</td></tr>
+    <tr><td class="k">400 sq ft</td><td>13</td><td>9</td></tr>
+    <tr><td class="k">1000 sq ft</td><td>32</td><td>21</td></tr>
+  </table></div>
+  <p class="note">No waste added. A room with openings still buys the full sheet count.</p>
+
+  <h2 class="t">Fractions to decimal</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Frac</th><th>Dec</th><th>Frac</th><th>Dec</th></tr>
+    <tr><td class="k">1/16</td><td>.0625</td><td class="k">9/16</td><td>.5625</td></tr>
+    <tr><td class="k">1/8</td><td>.125</td><td class="k">5/8</td><td>.625</td></tr>
+    <tr><td class="k">3/16</td><td>.1875</td><td class="k">11/16</td><td>.6875</td></tr>
+    <tr><td class="k">1/4</td><td>.25</td><td class="k">3/4</td><td>.75</td></tr>
+    <tr><td class="k">5/16</td><td>.3125</td><td class="k">13/16</td><td>.8125</td></tr>
+    <tr><td class="k">3/8</td><td>.375</td><td class="k">7/8</td><td>.875</td></tr>
+    <tr><td class="k">7/16</td><td>.4375</td><td class="k">15/16</td><td>.9375</td></tr>
+    <tr><td class="k">1/2</td><td>.5</td><td class="k">1</td><td>1.0</td></tr>
+  </table></div>
+
+  <h2 class="t">Studs per wall, 16" OC</h2>
+  <div class="tblwrap"><table>
+    <tr><th>Wall</th><th>Studs</th><th>Plate stock</th></tr>
+    <tr><td class="k">8 ft</td><td>7</td><td>24 lin ft</td></tr>
+    <tr><td class="k">12 ft</td><td>10</td><td>36 lin ft</td></tr>
+    <tr><td class="k">16 ft</td><td>13</td><td>48 lin ft</td></tr>
+    <tr><td class="k">20 ft</td><td>16</td><td>60 lin ft</td></tr>
+    <tr><td class="k">24 ft</td><td>19</td><td>72 lin ft</td></tr>
+  </table></div>
+  <p class="note">Field studs only, with a double top plate. Add corners, channels and openings.</p>
+
+  <h2 class="t">Handy conversions</h2>
+  <div class="tblwrap"><table>
+    <tr><td class="k">1 cu yd</td><td>27 cu ft</td></tr>
+    <tr><td class="k">1 sq ft of 4" concrete</td><td>0.33 cu ft</td></tr>
+    <tr><td class="k">Sand / gravel</td><td>about 100 lb per cu ft, 1.4 ton per cu yd</td></tr>
+    <tr><td class="k">50 lb bag of sand</td><td>about 0.5 cu ft</td></tr>
+    <tr><td class="k">Board foot</td><td>144 cu in — a 1x12 one foot long</td></tr>
+    <tr><td class="k">Lineal ft to board ft</td><td>lin ft &times; nominal T &times; nominal W &divide; 12</td></tr>
+  </table></div>
+
+  <div class="callout"><b>Customer questions worth asking first</b>
+  Is it touching the ground? Is it structural? Indoors or out? Those three answers pick the treatment, the fastener and the grade most of the time.</div>
+</section>
+
+<footer>Numbers here are planning estimates for quoting and pulling stock. Structural sizing, spans and anything permitted follow local code and the job's plans.</footer>
+</div>
+
+<script>
+(function(){
+const $ = s => document.querySelector(s);
+const v = id => $("#"+id).value;
+const el = id => $("#"+id);
+
+/* --- parsing: 12, 12.5, "8 5/8", "3/4", "6' 4\"" --- */
+function num(s){
+  if(typeof s === "number") return s;
+  s = String(s||"").trim().replace(/[”"″]/g,'"').replace(/[’']/g,"'");
+  if(!s) return 0;
+  const ft = s.match(/^(-?[\d.]+)\s*'\s*(.*)$/);
+  if(ft) return (parseFloat(ft[1])||0)*12 + num(ft[2].replace(/"/g,""));
+  s = s.replace(/"/g,"").trim();
+  const mixed = s.match(/^(-?\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if(mixed) return parseFloat(mixed[1]) + parseFloat(mixed[2])/parseFloat(mixed[3]);
+  const frac = s.match(/^(-?\d+)\s*\/\s*(\d+)$/);
+  if(frac) return parseFloat(frac[1])/parseFloat(frac[2]);
+  const n = parseFloat(s);
+  return isFinite(n) ? n : 0;
+}
+const money = n => "$" + n.toFixed(2);
+const r1 = n => Math.round(n*10)/10;
+const r2 = n => Math.round(n*100)/100;
+function frac16(x){
+  const neg = x<0; x = Math.abs(x);
+  let whole = Math.floor(x), s = Math.round((x-whole)*16);
+  if(s===16){ whole++; s=0; }
+  let out = String(whole);
+  if(s){ let n=s,d=16; while(n%2===0){n/=2;d/=2;} out = (whole? whole+" ":"") + n+"/"+d; }
+  return (neg?"-":"") + out;
+}
+function out(id, big, lines, tone){
+  el(id).innerHTML = `<div class="big" ${tone?`style="color:${tone}"`:""}>${big}</div>` +
+    (lines && lines.length ? `<ul>${lines.filter(Boolean).map(l=>`<li>${l}</li>`).join("")}</ul>` : "");
+}
+
+/* --- board feet --- */
+function bf(){
+  const t=num(v("bf_t")), w=num(v("bf_w")), l=num(v("bf_l")), q=Math.max(1,Math.round(num(v("bf_q"))||1));
+  const per = t*w*l/12, tot = per*q, p = num(v("bf_p"));
+  out("bf_out", `${r2(tot)} board ft`, [
+    `${r2(per)} BF per piece &times; ${q}`,
+    p ? `Total at ${money(p)}/BF: <b>${money(tot*p)}</b> — ${money(per*p)} a piece` : "Add a price per BF for the total",
+    `Lineal feet: ${r1(l*q)}`
+  ]);
+}
+["bf_t","bf_w","bf_l","bf_q","bf_p"].forEach(id=>el(id).addEventListener("input",bf)); bf();
+
+/* --- deck --- */
+function deck(){
+  const A=num(v("dk_a")), B=num(v("dk_b")), bw=num(v("dk_bw")), g=num(v("dk_g")),
+        L=num(v("dk_len")), oc=num(v("dk_oc")), waste=1+num(v("dk_waste"))/100;
+  if(A<=0||B<=0||bw<=0) return out("dk_out","Enter the deck size",[]);
+  const rows = Math.ceil((B*12) / (bw+g));
+  const linft = rows*A;
+  const perRow = Math.ceil(A/L);
+  const boards = Math.ceil(rows*perRow*waste);
+  const joists = Math.floor((A*12)/oc)+1;
+  const screws = rows*joists*2;
+  out("dk_out", `${boards} deck boards @ ${L} ft`, [
+    `${rows} rows across ${B} ft — ${r1(linft)} lineal ft before waste`,
+    `Joists at ${oc}" OC: <b>${joists}</b> pieces, ${B} ft long, plus rim and ledger`,
+    `Screws: about ${screws} (2 per board per joist) — roughly ${Math.ceil(screws/350)} lb box${screws>350?"es":""}`,
+    `Deck area: ${r1(A*B)} sq ft`
+  ]);
+}
+["dk_a","dk_b","dk_bw","dk_g","dk_len","dk_oc","dk_waste"].forEach(id=>el(id).addEventListener("input",deck));
+["dk_bw","dk_len","dk_oc"].forEach(id=>el(id).addEventListener("change",deck)); deck();
+
+/* --- wall --- */
+function wall(){
+  const L=num(v("wl_l")), oc=num(v("wl_oc")), c=Math.round(num(v("wl_c"))), o=Math.round(num(v("wl_o"))), tp=num(v("wl_tp"));
+  if(L<=0) return out("wl_out","Enter a wall length",[]);
+  const field = Math.floor((L*12)/oc)+1;
+  const corner = c*2;
+  const opening = o*4;
+  const plate = L*(1+tp);
+  out("wl_out", `${field+corner+opening} studs`, [
+    `${field} field studs at ${oc}" OC, ${corner} for corners and channels, ${opening} for openings`,
+    `Plates: ${r1(plate)} lineal ft — about ${Math.ceil(plate/16)} pieces at 16 ft`,
+    `Bottom plate in contact with concrete must be treated`
+  ]);
+}
+["wl_l","wl_oc","wl_c","wl_o","wl_tp"].forEach(id=>{el(id).addEventListener("input",wall);el(id).addEventListener("change",wall);}); wall();
+
+/* --- concrete --- */
+function conc(){
+  const mode = v("cc_mode"), bag = num(v("cc_bag"));
+  el("cc_slab").hidden = mode!=="slab";
+  el("cc_round").hidden = mode==="slab";
+  let cuft = 0, detail = "";
+  if(mode==="slab"){
+    const L=num(v("cc_l")), W=num(v("cc_w")), D=num(v("cc_d"));
+    cuft = L*W*(D/12);
+    detail = `${r1(L*W)} sq ft at ${D}" thick`;
+  } else {
+    const dia=num(v("cc_dia")), dep=num(v("cc_dep")), n=Math.max(1,Math.round(num(v("cc_n")))), post=v("cc_post");
+    const hole = Math.PI*Math.pow(dia/2,2)*dep/1728;
+    let disp = 0;
+    if(post==="round4") disp = Math.PI*Math.pow(4/2,2)*dep/1728;
+    else if(num(post)>0) disp = Math.pow(num(post),2)*dep/1728;
+    const each = Math.max(0, hole-disp);
+    cuft = each*n;
+    detail = `${r2(each)} cu ft per hole${disp?` (post volume taken out)`:""} &times; ${n}`;
+  }
+  const bags = Math.ceil(cuft/bag);
+  const yards = cuft/27;
+  out("cc_out", `${bags} bag${bags===1?"":"s"}`, [
+    detail,
+    `${r2(cuft)} cubic feet — ${r2(yards)} cubic yards`,
+    yards>1 ? `Over a yard: price a ready-mix truck against ${bags} bags` : `Mixing by hand: plan on water and a tub or mixer`
+  ]);
+}
+["cc_mode","cc_l","cc_w","cc_d","cc_dia","cc_dep","cc_n","cc_post","cc_bag"].forEach(id=>{
+  el(id).addEventListener("input",conc); el(id).addEventListener("change",conc);}); conc();
+
+/* --- sheets --- */
+function sheets(){
+  const L=num(v("sh_l")), H=num(v("sh_h")), n=Math.max(1,Math.round(num(v("sh_n")))), sz=num(v("sh_sz")), w=1+num(v("sh_waste"))/100;
+  const area = L*H*n;
+  const s = Math.ceil(area/sz*w);
+  out("sh_out", `${s} sheets`, [
+    `${r1(area)} sq ft across ${n} surface${n===1?"":"s"}, waste included`,
+    `Drywall: about ${s*32} screws and ${r1(s*38)} lineal ft of tape`,
+    `Subfloor or sheathing: 8d ring shank, 6" on edges and 12" in the field`
+  ]);
+}
+["sh_l","sh_h","sh_n","sh_sz","sh_waste"].forEach(id=>{el(id).addEventListener("input",sheets);el(id).addEventListener("change",sheets);}); sheets();
+
+/* --- bulk --- */
+function bulk(){
+  const L=num(v("bk_l")), W=num(v("bk_w")), D=num(v("bk_d")), b=num(v("bk_bag"));
+  const cuft = L*W*(D/12), yards = cuft/27, bags = Math.ceil(cuft/b);
+  out("bk_out", `${bags} bags`, [
+    `${r1(L*W)} sq ft at ${D}" deep`,
+    `${r1(cuft)} cubic feet — ${r2(yards)} cubic yards`,
+    yards>=1 ? `Bulk delivery is usually cheaper past a yard` : ``,
+    `Weight if it's sand or stone: roughly ${Math.round(cuft*100)} lb — check the cart and the customer's vehicle`
+  ]);
+}
+["bk_l","bk_w","bk_d","bk_bag"].forEach(id=>{el(id).addEventListener("input",bulk);el(id).addEventListener("change",bulk);}); bulk();
+
+/* --- fence --- */
+function fence(){
+  const L=num(v("fn_l")), S=num(v("fn_s")), pw=num(v("fn_pw")), pg=num(v("fn_pg")), rp=num(v("fn_r"));
+  if(L<=0||S<=0) return out("fn_out","Enter the run",[]);
+  const sections = Math.ceil(L/S), posts = sections+1, rails = sections*rp;
+  const pickets = (pw+pg)>0 ? Math.ceil((L*12)/(pw+pg)) : 0;
+  const hm = String(v("fn_h")).split(/x|X|\*/);
+  const dia = num(hm[0]||10), dep = num(hm[1]||24);
+  const perHole = Math.max(0, Math.PI*Math.pow(dia/2,2)*dep/1728 - Math.pow(3.5,2)*dep/1728);
+  const bags = Math.ceil(perHole/0.6*posts);
+  out("fn_out", `${posts} posts, ${pickets} pickets`, [
+    `${sections} sections at ${S} ft, ${rails} rails (${rp} per section)`,
+    `Rail stock: ${r1(L*rp)} lineal ft`,
+    `Concrete: about ${bags} 80 lb bags total, ${r1(perHole/0.6)} per ${dia}" x ${dep}" hole with a 4x4`,
+    `Add a gate kit, hinges and a latch if the run has one`
+  ]);
+}
+["fn_l","fn_s","fn_pw","fn_pg","fn_r","fn_h"].forEach(id=>{el(id).addEventListener("input",fence);el(id).addEventListener("change",fence);}); fence();
+
+/* --- converter --- */
+function conv(){
+  const x = num(v("cv_in"));
+  if(!x) return out("cv_out","Type a measurement",[]);
+  const ft = Math.floor(x/12), inch = x-ft*12;
+  out("cv_out", `${r2(x)}"`, [
+    `Nearest 1/16: <b>${frac16(x)}"</b>`,
+    `Feet and inches: ${ft}' ${frac16(inch)}"`,
+    `Decimal feet: ${r2(x/12)} ft`,
+    `Metric: ${r1(x*25.4)} mm — ${r2(x*2.54)} cm`
+  ]);
+}
+el("cv_in").addEventListener("input",conv); conv();
+
+/* --- tabs --- */
+const SECT = {calc:"calc", lumber:"lumber", concrete:"concrete", ref:"ref"};
+$("#tabs").addEventListener("click", e=>{
+  const b = e.target.closest("[data-t]"); if(!b) return;
+  document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected", String(x===b)));
+  Object.values(SECT).forEach(id=>{ $("#"+id).hidden = (id!==b.dataset.t); });
+  scrollTo({top:0,behavior:"smooth"});
+});
+
+/* --- back link: relative when self-hosted, absolute inside Claude --- */
+if(/claude/.test(location.hostname)) el("back").href = "https://claude.ai/artifact/5UGQQjf8QSRFYaHS24y8Dx";
+el("back").target = "_top";
+})();
+</script>
+</body>
+</html>
