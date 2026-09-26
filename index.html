@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DS Floor Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E8EAEB; --surface:#FFFFFF; --ink:#1B2024; --muted:#5E676E; --line:#CDD2D5;
+  --hivis:#E8601C; --hivis-ink:#FFFFFF; --steel:#2F5D7C; --tag:#F4C542; --tag-ink:#1B2024;
+  --late:#B3261E; --ok:#2E7D4F;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15181B; --surface:#1F2428; --ink:#E9ECEE; --muted:#9AA3AA; --line:#343B41;
+    --hivis:#F2772F; --steel:#7FB2D6; --tag:#E2B63A; --late:#FF8A80; --ok:#6FCF97;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15181B; --surface:#1F2428; --ink:#E9ECEE; --muted:#9AA3AA; --line:#343B41;
+  --hivis:#F2772F; --steel:#7FB2D6; --tag:#E2B63A; --late:#FF8A80; --ok:#6FCF97;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased;padding-bottom:96px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--steel);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+
+header{padding:20px 0 8px}
+.date{color:var(--muted);font-size:15px}
+h1{font-family:var(--display);font-weight:700;font-size:40px;line-height:1;margin:2px 0 0;letter-spacing:.2px}
+.sync{font-size:13px;color:var(--muted);margin-top:6px}
+
+/* Tab strip doubles as the day's count board */
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:16px 0 12px;border:2px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--surface)}
+.board button{border:0;background:transparent;padding:10px 4px 8px;cursor:pointer;text-align:center;border-right:2px solid var(--ink);position:relative}
+.board button:last-child{border-right:0}
+.board .n{display:block;font-family:var(--display);font-weight:700;font-size:34px;line-height:1}
+.board .l{display:block;font-size:13px;font-weight:600;margin-top:2px}
+.board .late{display:block;font-size:12px;color:var(--late);font-weight:600;min-height:17px}
+.board button[aria-selected="true"]{background:var(--hivis);color:var(--hivis-ink)}
+.board button[aria-selected="true"] .late{color:var(--hivis-ink)}
+
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.tools input[type=search],.tools select{flex:1 1 160px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.check{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);padding:4px 2px}
+.check input{width:18px;height:18px;accent-color:var(--hivis)}
+
+ul.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.item{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:6px;padding:12px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start}
+.item.hi{border-left-color:var(--hivis)}
+.item.haz{border-left-color:var(--late)}
+.item.done{opacity:.55}
+.loc{background:var(--tag);color:var(--tag-ink);font-family:var(--display);font-weight:700;border-radius:3px;padding:4px 6px;min-width:58px;text-align:center;line-height:1.05}
+.loc small{display:block;font-size:11px;font-weight:600}
+.loc b{display:block;font-size:20px}
+.loc.none{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.main{min-width:0;cursor:pointer}
+.title{font-weight:600;overflow-wrap:anywhere}
+.meta{font-size:14px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:2px}
+.meta .bad{color:var(--late);font-weight:600}
+.flag{font-size:12px;font-weight:600;border-radius:3px;padding:1px 6px;border:1px solid currentColor}
+.notes{font-size:14px;margin-top:4px;overflow-wrap:anywhere}
+.status{border:2px solid var(--steel);color:var(--steel);background:transparent;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.status.last{border-color:var(--ok);color:var(--ok)}
+
+.empty{text-align:center;padding:36px 16px;color:var(--muted);border:2px dashed var(--line);border-radius:6px}
+.empty button{margin-top:10px}
+
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:5}
+.btn{border:0;border-radius:6px;padding:12px 18px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--hivis);color:var(--hivis-ink);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.btn.ghost{background:var(--surface);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--late);border:1px solid var(--late)}
+
+dialog{border:0;border-radius:10px;padding:0;width:min(560px,calc(100% - 24px));background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.sheet{padding:18px}
+.sheet h2{font-family:var(--display);font-size:28px;margin:0 0 12px}
+.types{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.types label{flex:1 1 auto}
+.types input{position:absolute;opacity:0}
+.types span{display:block;text-align:center;padding:8px 10px;border:2px solid var(--line);border-radius:6px;font-weight:600;font-size:14px;cursor:pointer}
+.types input:checked+span{border-color:var(--hivis);background:var(--hivis);color:var(--hivis-ink)}
+.types input:focus-visible+span{outline:3px solid var(--steel)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
+.field.full{grid-column:1/-1}
+.field input,.field select,.field textarea{font-weight:400;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);width:100%}
+.field textarea{min-height:70px;resize:vertical}
+.row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap}
+.hint{font-size:12px;font-weight:400;color:var(--muted)}
+pre.sum{white-space:pre-wrap;background:var(--bg);border-radius:6px;padding:12px;font:14px/1.4 var(--body);max-height:50vh;overflow:auto;margin:0}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.toollink{display:inline-block;text-decoration:none;font-weight:600;font-size:14px;color:var(--ink);
+  background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--tag);border-radius:6px;padding:8px 12px}
+.withbtn{display:flex;gap:6px;align-items:stretch}
+.withbtn input{flex:1;min-width:0}
+.btn.small{padding:8px 12px;font-size:14px}
+.cam{position:relative;background:#0C0E10;border-radius:6px;overflow:hidden;aspect-ratio:4/3;display:none}
+.cam.on{display:block}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.reticle{position:absolute;inset:18% 8%;border:2px solid var(--hivis);border-radius:4px;box-shadow:0 0 0 2000px rgba(0,0,0,.28)}
+.reticle::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:var(--hivis);opacity:.9}
+.chartcard{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+.chartcard h3{font-family:var(--display);font-size:21px;margin:0 0 2px}
+.chartcard .cap{font-size:13px;color:var(--muted);margin:0 0 8px}
+.chartcard svg{width:100%;height:auto;display:block;overflow:visible}
+.split{display:flex;height:34px;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.split span{display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:#fff;min-width:0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px}
+.chartnote{font-size:13px;color:var(--muted);margin:8px 0 0}
+/* heat ramp — single hue, validated light->dark against each surface */
+:root{
+  --h0:#E8EAEB; --h0i:#5E676E;
+  --h1:#EDA469; --h1i:#1B2024;
+  --h2:#DB7A34; --h2i:#1B2024;
+  --h3:#B85213; --h3i:#FFFFFF;
+  --h4:#7E2E09; --h4i:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --h0:#262C31; --h0i:#9AA3AA;
+  --h1:#7A4822; --h1i:#FFFFFF;
+  --h2:#A96020; --h2i:#FFFFFF;
+  --h3:#D9761F; --h3i:#15181B;
+  --h4:#F7AC66; --h4i:#15181B;
+}}
+:root[data-theme="dark"]{
+  --h0:#262C31; --h0i:#9AA3AA;
+  --h1:#7A4822; --h1i:#FFFFFF;
+  --h2:#A96020; --h2i:#FFFFFF;
+  --h3:#D9761F; --h3i:#15181B;
+  --h4:#F7AC66; --h4i:#15181B;
+}
+.modes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.modes button{border:2px solid var(--line);background:transparent;border-radius:6px;padding:6px 12px;
+  font-size:14px;font-weight:600;cursor:pointer}
+.modes button[aria-pressed="true"]{border-color:var(--hivis);background:var(--hivis);color:var(--hivis-ink)}
+#floormap svg text{font-family:var(--body)}
+.rack text{font-family:var(--display)}
+.rack{cursor:pointer}
+.rack rect{transition:none}
+.rack:hover rect.body,.rack:focus-visible rect.body{stroke:var(--steel);stroke-width:2.5}
+.rack.sel rect.body{stroke:var(--ink);stroke-width:3}
+.heatlegend{display:flex;align-items:center;gap:0;margin-top:10px;flex-wrap:wrap}
+.heatlegend .sw{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:52px}
+.heatlegend .sw i{display:block;width:100%;height:14px;border-radius:3px;border:1px solid var(--line)}
+.heatlegend .sw b{font-size:12px;font-weight:600;color:var(--muted)}
+.detail{margin-top:10px;background:var(--bg);border-left:6px solid var(--hivis);border-radius:4px;padding:10px 12px}
+.detail h4{font-family:var(--display);font-size:20px;margin:0 0 2px}
+.detail p{margin:0;font-size:14px;color:var(--muted)}
+.detail .clr{margin-top:8px}
+.offmap{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.offmap button{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px 10px;
+  font-size:14px;font-weight:600;cursor:pointer}
+.offmap button[aria-pressed="true"]{border-color:var(--ink);background:var(--hivis);color:var(--hivis-ink)}
+/* walk sheet — printed black on white, so it photocopies and reads under store lighting */
+.wspreview{max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:6px;background:#fff;margin-top:4px}
+.wspreview .wsscale{overflow:hidden}
+.wspreview .walksheet{width:680px;transform-origin:top left;padding:14px}
+.walksheet{color:#000;font:11pt/1.35 var(--body)}
+.walksheet h1{font-family:var(--display);font-size:22pt;margin:0;line-height:1.05}
+.walksheet .ps-meta{font-size:9.5pt;margin-top:2px}
+.walksheet .ps-meta b{font-weight:600}
+.walksheet .ps-assign{margin-top:8px;font-size:10pt;border-top:1.2pt solid #000;border-bottom:1.2pt solid #000;padding:5px 0}
+.walksheet .ps-assign span{display:inline-block;margin-right:18px}
+.walksheet .ps-assign u{text-decoration:none;border-bottom:1pt solid #000;display:inline-block;min-width:110px}
+.walksheet table{width:100%;border-collapse:collapse;margin-top:10px}
+.walksheet th{font-size:8.5pt;font-weight:700;text-align:left;padding:4px 5px;border-bottom:1.5pt solid #000;white-space:nowrap}
+.walksheet td{font-size:10pt;padding:7px 5px;border-bottom:.6pt solid #8a8a8a;vertical-align:top}
+.walksheet tr{break-inside:avoid;page-break-inside:avoid}
+.walksheet tr.grp td{font-family:var(--display);font-size:13pt;font-weight:700;padding:7px 5px 3px;
+  border-top:1.4pt solid #000;border-bottom:.8pt solid #000}
+.walksheet .box{display:inline-block;width:14px;height:14px;border:1.2pt solid #000;border-radius:2px}
+.walksheet td.c,.walksheet th.c{width:26px;text-align:center}
+.walksheet .bay{font-weight:700;white-space:nowrap;background:none;color:#000;padding:7px 5px}
+.walksheet .sku{font-size:8.5pt}
+.walksheet .dirty{font-weight:700}
+.walksheet .writein{display:inline-block;width:100%;min-height:15px;border-bottom:.6pt dotted #666}
+.walksheet .ps-foot{margin-top:10px;font-size:9pt;border-top:.8pt solid #000;padding-top:5px}
+.walksheet .ps-empty{margin-top:14px;font-size:11pt}
+#printsheet{display:none}
+@media print{
+  body>*{display:none!important}
+  #printsheet{display:block!important;padding:0;margin:0}
+  body{background:#fff!important;color:#000!important;padding:0!important}
+  .walksheet td{border-bottom-color:#999}
+  @page{margin:12mm}
+}
+.toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+@media (max-width:420px){
+  h1{font-size:34px}
+  .board .n{font-size:28px}
+  .board .l{font-size:12px}
+  .grid{grid-template-columns:1fr}
+  .item{grid-template-columns:auto 1fr;}
+  .item .status{grid-column:1/-1;justify-self:start}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="date" id="today"></div>
+    <h1>Floor tracker</h1>
+    <div class="sync" id="sync">Saved on this device</div>
+    <div class="toolbar">
+      <a class="toollink" id="d21link" href="tools/d21-d22-cheatsheet.html">Cheat sheet &rarr;</a>
+      <a class="toollink" id="takeofflink" href="tools/project-takeoff.html">Takeoff &rarr;</a>
+      <a class="toollink" id="overheadlink" href="tools/overhead-map.html">Overhead map &rarr;</a>
+    </div>
+  </header>
+
+  <div class="board" role="tablist" id="board"></div>
+
+  <div class="tools">
+    <input type="search" id="q" placeholder="Search SKU, item, notes" aria-label="Search">
+    <select id="deptFilter" aria-label="Filter by department"><option value="">All departments</option></select>
+    <label class="check"><input type="checkbox" id="showDone"> Show finished</label>
+    <button class="btn ghost" id="mapBtn" hidden style="flex:0 0 auto">Heatmap</button>
+    <button class="btn ghost" id="chartBtn" hidden style="flex:0 0 auto">Charts</button>
+    <button class="btn ghost" id="wsBtn" hidden style="flex:0 0 auto">Walk sheet</button>
+  </div>
+
+  <div id="floormap" hidden></div>
+  <div id="charts" hidden></div>
+
+  <ul class="list" id="list"></ul>
+</div>
+
+<div class="fab">
+  <button class="btn ghost" id="sumBtn">Summary</button>
+  <button class="btn ghost" id="scanBtn">Scan</button>
+  <button class="btn primary" id="addBtn">Add item</button>
+</div>
+
+<dialog id="edit">
+  <form class="sheet" id="form" method="dialog">
+    <h2 id="formTitle">Add item</h2>
+    <div class="types" role="radiogroup" aria-label="Type" id="typePick"></div>
+    <div class="grid">
+      <label class="field full"><span id="titleLbl">Item</span><input name="title" required autocomplete="off"></label>
+      <label class="field">Department<input name="dept" list="depts" autocomplete="off"></label>
+      <label class="field">SKU / PO
+        <span class="withbtn"><input name="sku" inputmode="numeric" autocomplete="off"><button type="button" class="btn ghost small" id="skuScan">Scan</button></span>
+      </label>
+      <label class="field">Aisle<input name="aisle" inputmode="numeric" autocomplete="off"></label>
+      <label class="field">Bay<input name="bay" inputmode="numeric" autocomplete="off"></label>
+      <label class="field" id="qtyF"><span id="qtyLbl">Qty</span><input name="qty" inputmode="numeric" autocomplete="off"><span class="hint" id="qtyHint"></span></label>
+      <label class="field"><span id="dueLbl">Due</span><input name="due" type="date"></label>
+      <label class="field">Status<select name="status" id="statusSel"></select></label>
+      <label class="field">Priority<select name="priority"><option value="normal">Normal</option><option value="high">High</option></select></label>
+      <label class="field" id="soldF"><span>Last sold</span><input name="lastSold" type="date"><span class="hint" id="soldHint"></span></label>
+      <label class="check full" id="hazF" style="grid-column:1/-1"><input type="checkbox" name="hazard"> Safety issue (blocked aisle, unsecured load, damaged beam)</label>
+      <label class="field full">Notes<textarea name="notes"></textarea></label>
+    </div>
+    <div class="row">
+      <button type="button" class="btn danger" id="delBtn" hidden>Delete</button>
+      <span style="flex:1"></span>
+      <button type="button" class="btn ghost" id="cancelBtn">Cancel</button>
+      <button type="submit" class="btn primary" id="saveBtn">Save item</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="scanDlg">
+  <div class="sheet">
+    <h2 id="scanTitle">Scan a shelf label</h2>
+    <div class="cam" id="cam">
+      <video id="video" playsinline muted></video>
+      <div class="reticle" aria-hidden="true"></div>
+    </div>
+    <p class="hint" id="scanMsg" aria-live="polite">Starting camera…</p>
+    <label class="field full" style="margin-top:8px">Or key the number in
+      <span class="withbtn">
+        <input id="manual" inputmode="numeric" autocomplete="off" placeholder="SKU or barcode">
+        <button type="button" class="btn primary small" id="manualGo">Use</button>
+      </span>
+    </label>
+    <p class="hint">A Bluetooth or wedge scanner works too: just scan while this page is open.</p>
+    <div class="row">
+      <span style="flex:1"></span>
+      <button class="btn ghost" id="scanClose">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="sumDlg">
+  <div class="sheet">
+    <h2>Shift summary</h2>
+    <p class="hint" style="margin:0 0 8px">Open items for the walk or the handoff to the next DS.</p>
+    <pre class="sum" id="sumText"></pre>
+    <div class="row">
+      <span style="flex:1"></span>
+      <button class="btn ghost" id="sumClose">Close</button>
+      <button class="btn primary" id="sumCopy">Copy text</button>
+    </div>
+  </div>
+</dialog>
+
+<datalist id="depts">
+  <option>Lumber</option><option>Building Materials</option><option>Flooring</option><option>Paint</option>
+  <option>Hardware</option><option>Plumbing</option><option>Electrical</option><option>Lighting</option>
+  <option>Garden</option><option>Kitchen &amp; Bath</option><option>Millwork</option><option>Appliances</option>
+  <option>Decor</option><option>Tools</option><option>Seasonal</option><option>Receiving</option>
+</datalist>
+
+<dialog id="wsDlg">
+  <div class="sheet">
+    <h2>Walk sheet</h2>
+    <p class="hint" style="margin:0 0 10px">A printable list of outs in walk order, with a box to tick and room to write.</p>
+    <div class="modes" id="wsScope">
+      <button data-ws="all" aria-pressed="true">All open</button>
+      <button data-ws="dirty" aria-pressed="false">Dirty only</button>
+      <button data-ws="clean" aria-pressed="false">Clean only</button>
+    </div>
+    <div class="grid">
+      <label class="field full">Assigned to<input id="wsWho" autocomplete="off" placeholder="Associate name — optional"></label>
+      <label class="check full" style="grid-column:1/-1"><input type="checkbox" id="wsFilters" checked> Use the filters on screen</label>
+    </div>
+    <div id="wsPrev" class="wspreview"></div>
+    <div class="row">
+      <button type="button" class="btn ghost" id="wsCopy">Copy as text</button>
+      <span style="flex:1"></span>
+      <button type="button" class="btn ghost" id="wsClose">Close</button>
+      <button type="button" class="btn primary" id="wsPrint">Print</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="printsheet" class="walksheet"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+const TYPES = {
+  ship:{label:"Shipments", one:"Shipment", title:"What's coming (vendor, load, item)", qty:"Pallets / units", due:"Arriving", statuses:["Expected","Arrived","Worked"]},
+  out:{label:"Outs", one:"Scanned out", title:"Item", qty:"On hand (OH)", due:"Follow up by", statuses:["Scanned out","Ordered","Located","Filled"]},
+  over:{label:"Overhead", one:"Overhead issue", title:"Issue (e.g. unlabeled pallet, overhang)", qty:"Pallets", due:"Fix by", statuses:["Reported","Scheduled","Fixed"]},
+  task:{label:"Tasks", one:"Task", title:"Task", qty:"Qty", due:"Due", statuses:["Open","In progress","Done"]}
+};
+const LS_KEY = "ds-floor-tracker:v1";
+let items = [];
+let tab = "ship";
+let editing = null;
+let db = null;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const todayStr = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const isDone = it => it.status === TYPES[it.type].statuses.at(-1);
+function outClass(i){
+  if(!i || i.type!=="out") return null;
+  const q = String(i.qty ?? "").trim();
+  if(q==="") return null;
+  const n = Number(q.replace(/[^0-9.-]/g,""));
+  if(!isFinite(n)) return null;
+  return n > 0 ? "Dirty" : "Clean";
+}
+const isLate = it => !isDone(it) && it.due && it.due < todayStr();
+const fmtDate = d => { if(!d) return ""; const [y,m,dd]=d.split("-").map(Number); const t=todayStr();
+  if(d===t) return "Today"; const dt=new Date(y,m-1,dd); return dt.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}); };
+
+$("#today").textContent = new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),1800); }
+
+/* ---------- storage: local first, shared db when available ---------- */
+function loadLocal(){ try{ items = JSON.parse(localStorage.getItem(LS_KEY)||"[]"); }catch(e){ items=[]; } }
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(items)); }catch(e){} }
+
+async function persist(it){
+  if(db){
+    try{ await db.collection("items").doc(it.id).set(it); }
+    catch(e){ toast(e && e.code==="quota_exceeded" ? "Storage is full. Delete finished items to add more." : "Couldn't save. Check your connection."); }
+  } else saveLocal();
+}
+async function remove(id){
+  if(db){ try{ await db.collection("items").doc(id).delete(); }catch(e){ toast("Couldn't delete. Try again."); } }
+  else saveLocal();
+}
+
+async function connect(){
+  if(!window.claude || !window.claude.use) return;
+  try{
+    const d = await window.claude.use("db");
+    if(!d) return;
+    db = d;
+    $("#sync").textContent = "Syncing…";
+    db.collection("items").onSnapshot(snap => {
+      items = snap.docs.map(x => x.data());
+      $("#sync").textContent = "Synced for everyone with this link";
+      render();
+    }, () => { $("#sync").textContent = "Sync paused. Reload to reconnect."; });
+  }catch(e){}
+}
+
+/* ---------- render ---------- */
+function render(){
+  const board = $("#board");
+  board.innerHTML = Object.entries(TYPES).map(([k,t])=>{
+    const open = items.filter(i=>i.type===k && !isDone(i));
+    const late = open.filter(isLate).length;
+    const dueToday = k==="ship" ? open.filter(i=>i.due===todayStr()).length : 0;
+    const sub = late ? `${late} late` : (dueToday ? `${dueToday} today` : "");
+    return `<button role="tab" aria-selected="${k===tab}" data-tab="${k}">
+      <span class="n">${open.length}</span><span class="l">${t.label}</span>
+      <span class="late" style="${!late&&dueToday?'color:inherit;opacity:.75':''}">${sub}</span></button>`;
+  }).join("");
+
+  const depts = [...new Set(items.map(i=>i.dept).filter(Boolean))].sort();
+  const df = $("#deptFilter"), cur = df.value;
+  df.innerHTML = `<option value="">All departments</option>` + depts.map(d=>`<option ${d===cur?"selected":""}>${esc(d)}</option>`).join("");
+
+  const q = $("#q").value.trim().toLowerCase();
+  const showDone = $("#showDone").checked;
+  let list = items.filter(i=>i.type===tab)
+    .filter(i=>showDone || !isDone(i))
+    .filter(i=>!df.value || i.dept===df.value)
+    .filter(i=>!q || [i.title,i.sku,i.notes,i.dept].join(" ").toLowerCase().includes(q))
+    .filter(i=>!selAisle || String(i.aisle||"")===selAisle);
+
+  list.sort((a,b)=> (isDone(a)-isDone(b)) || (isLate(b)-isLate(a)) || ((b.hazard?1:0)-(a.hazard?1:0))
+    || ((b.priority==="high")-(a.priority==="high")) || (a.due||"9999").localeCompare(b.due||"9999") || (b.createdAt-a.createdAt));
+
+  const ul = $("#list");
+  $("#chartBtn").hidden = tab!=="out";
+  $("#mapBtn").hidden = tab!=="out";
+  $("#wsBtn").hidden = tab!=="out";
+  renderMap();
+  renderCharts();
+  if(!list.length){
+    const t = TYPES[tab];
+    const why = selAisle ? `No outs in aisle ${esc(selAisle)} right now.` :
+      items.some(i=>i.type===tab) ? "Nothing matches these filters." : `No ${t.label.toLowerCase()} logged yet.`;
+    ul.innerHTML = `<li class="empty">${why}<br>
+      <button class="btn primary" data-add="${tab}">Add ${t.one.toLowerCase()}</button></li>`;
+    return;
+  }
+  ul.innerHTML = list.map(i=>{
+    const t = TYPES[i.type], done = isDone(i), late = isLate(i);
+    const loc = (i.aisle||i.bay)
+      ? `<div class="loc">${i.aisle?`<small>Aisle</small><b>${esc(i.aisle)}</b>`:""}${i.bay?`<small>Bay ${esc(i.bay)}</small>`:""}</div>`
+      : `<div class="loc none"><small>No</small><b>loc</b></div>`;
+    const oc = outClass(i);
+    const meta = [
+      i.dept && `<span>${esc(i.dept)}</span>`,
+      i.sku && `<span>SKU ${esc(i.sku)}</span>`,
+      i.qty && `<span>${esc(t.qty)}: ${esc(i.qty)}</span>`,
+      oc && `<span class="flag" style="color:${oc==="Dirty"?"var(--late)":"var(--ok)"}">${oc} out</span>`,
+      i.due && `<span class="${late?"bad":""}">${esc(t.due)} ${esc(fmtDate(i.due))}${late?" (late)":""}</span>`,
+      i.lastSold && `<span class="${daysAgo(i.lastSold)>=90?"bad":""}">Last sold ${esc(fmtDate(i.lastSold))}${daysAgo(i.lastSold)>=90?` (${daysAgo(i.lastSold)}d)`:""}</span>`,
+      i.hazard && `<span class="flag" style="color:var(--late)">Safety</span>`,
+      i.priority==="high" && `<span class="flag" style="color:var(--hivis)">High</span>`
+    ].filter(Boolean).join("");
+    return `<li class="item ${i.hazard?"haz":i.priority==="high"?"hi":""} ${done?"done":""}">
+      ${loc}
+      <div class="main" data-edit="${i.id}" role="button" tabindex="0" aria-label="Edit ${esc(i.title)}">
+        <div class="title">${esc(i.title)}</div>
+        <div class="meta">${meta}</div>
+        ${i.notes?`<div class="notes">${esc(i.notes)}</div>`:""}
+      </div>
+      <button class="status ${done?"last":""}" data-next="${i.id}" title="Move to next status">${esc(i.status)}</button>
+    </li>`;
+  }).join("");
+}
+
+/* ---------- editing ---------- */
+const form = $("#form");
+$("#typePick").innerHTML = Object.entries(TYPES).map(([k,t])=>
+  `<label><input type="radio" name="type" value="${k}"><span>${t.one}</span></label>`).join("");
+
+function applyType(type, status){
+  const t = TYPES[type];
+  $("#titleLbl").textContent = t.title;
+  $("#qtyLbl").textContent = t.qty;
+  $("#dueLbl").textContent = t.due;
+  $("#statusSel").innerHTML = t.statuses.map(s=>`<option ${s===status?"selected":""}>${s}</option>`).join("");
+  $("#hazF").style.display = (type==="over"||type==="task") ? "flex" : "none";
+  $("#soldF").style.display = (type==="out") ? "flex" : "none";
+  qtyHint(); soldHint();
+}
+function daysAgo(d){ if(!d) return null; return Math.floor((Date.parse(todayStr())-Date.parse(d))/86400000); }
+function soldHint(){
+  const h = $("#soldHint");
+  if(form.type.value!=="out"){ h.textContent=""; return; }
+  const n = daysAgo(form.lastSold.value);
+  if(n===null){ h.style.color="var(--muted)"; h.textContent="From the SKU's sales history, if you have it."; return; }
+  if(n>=90){ h.style.color="var(--late)"; h.textContent=`${n} days — check assortment before reordering.`; }
+  else { h.style.color="var(--muted)"; h.textContent = n<=0 ? "Sold today." : `${n} day${n===1?"":"s"} ago.`; }
+}
+form.addEventListener("input", e=>{ if(e.target.name==="lastSold") soldHint(); });
+function qtyHint(){
+  const h = $("#qtyHint");
+  const oc = outClass({type: form.type.value, qty: form.qty.value});
+  if(!oc){ h.style.color = "var(--muted)"; h.textContent = form.type.value==="out" ? "OH 0 marks it clean, any OH marks it dirty." : ""; return; }
+  if(oc==="Dirty"){ form.priority.value = "high"; h.textContent = "Dirty out — set to high priority."; h.style.color = "var(--late)"; }
+  else { h.textContent = "Clean out — nothing on hand."; h.style.color = "var(--ok)"; }
+}
+form.addEventListener("input", e=>{ if(e.target.name==="qty") qtyHint(); });
+form.addEventListener("change", e=>{ if(e.target.name==="type") applyType(e.target.value); });
+
+function openEdit(it, type, prefill){
+  editing = it || null;
+  form.reset();
+  const ty = it ? it.type : (type||tab);
+  form.type.value = ty;
+  applyType(ty, it ? it.status : TYPES[ty].statuses[0]);
+  if(it){ ["title","dept","sku","aisle","bay","qty","due","priority","notes","lastSold"].forEach(k=>form[k].value = it[k]||""); form.priority.value = it.priority||"normal"; form.hazard.checked=!!it.hazard; }
+  else if(ty==="ship") form.due.value = todayStr();
+  $("#formTitle").textContent = it ? "Edit item" : "Add item";
+  $("#saveBtn").textContent = it ? "Save changes" : "Save item";
+  $("#delBtn").hidden = !it;
+  if(prefill) Object.entries(prefill).forEach(([k,v])=>{ if(form[k]) form[k].value = v; });
+  qtyHint();
+  if(!$("#edit").open) $("#edit").showModal();
+  setTimeout(()=>form.title.focus(),50);
+}
+
+form.addEventListener("submit", async e=>{
+  e.preventDefault();
+  const f = new FormData(form);
+  const now = Date.now();
+  const it = {
+    id: editing ? editing.id : ("i"+now.toString(36)+Math.random().toString(36).slice(2,7)),
+    type: f.get("type"),
+    title: f.get("title").trim(),
+    dept: f.get("dept").trim(), sku: f.get("sku").trim(),
+    aisle: f.get("aisle").trim(), bay: f.get("bay").trim(),
+    qty: f.get("qty").trim(), due: f.get("due"),
+    status: f.get("status"), priority: f.get("priority"),
+    hazard: !!f.get("hazard") && ["over","task"].includes(f.get("type")),
+    lastSold: f.get("type")==="out" ? (f.get("lastSold")||"") : "",
+    notes: f.get("notes").trim(),
+    createdAt: editing ? editing.createdAt : now, updatedAt: now
+  };
+  if(!it.title) return;
+  const oc = outClass(it);
+  if(oc){ it.cleanliness = oc; if(oc==="Dirty") it.priority = "high"; }
+  else delete it.cleanliness;
+  const idx = items.findIndex(x=>x.id===it.id);
+  if(idx>=0) items[idx]=it; else items.push(it);
+  tab = it.type;
+  $("#edit").close(); render();
+  toast(editing ? "Changes saved" : "Item saved");
+  await persist(it);
+});
+$("#cancelBtn").onclick = ()=>$("#edit").close();
+$("#delBtn").onclick = async ()=>{
+  if(!editing || !confirm("Delete this item?")) return;
+  const id = editing.id;
+  items = items.filter(x=>x.id!==id);
+  $("#edit").close(); render(); toast("Item deleted");
+  await remove(id);
+};
+
+/* ---------- interactions ---------- */
+document.addEventListener("click", async e=>{
+  const tb = e.target.closest("[data-tab]"); if(tb){ tab=tb.dataset.tab; render(); return; }
+  const ad = e.target.closest("[data-add]"); if(ad){ openEdit(null, ad.dataset.add); return; }
+  const ed = e.target.closest("[data-edit]"); if(ed){ openEdit(items.find(x=>x.id===ed.dataset.edit)); return; }
+  const nx = e.target.closest("[data-next]");
+  if(nx){
+    const it = items.find(x=>x.id===nx.dataset.next); if(!it) return;
+    const st = TYPES[it.type].statuses;
+    const next = st[(st.indexOf(it.status)+1) % st.length];
+    const upd = {...it, status: next, updatedAt: Date.now()};
+    items = items.map(x=>x.id===it.id?upd:x);
+    render(); toast(`Marked ${next.toLowerCase()}`);
+    await persist(upd);
+  }
+});
+document.addEventListener("keydown", e=>{
+  const ed = e.target.closest && e.target.closest("[data-edit]");
+  if(ed && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); ed.click(); }
+});
+$("#addBtn").onclick = ()=>openEdit(null, tab);
+$("#q").addEventListener("input", render);
+$("#deptFilter").addEventListener("change", render);
+$("#showDone").addEventListener("change", render);
+
+/* ---------- barcode scanning ---------- */
+const FORMATS = ["code_128","code_39","code_93","ean_13","ean_8","upc_a","upc_e","itf","codabar","qr_code","data_matrix"];
+let stream = null, detectTimer = null, zxReader = null, onScan = null, lastCode = "", lastAt = 0;
+
+function openScan(cb, title){
+  onScan = cb || null;
+  $("#scanTitle").textContent = title || "Scan a shelf label";
+  $("#manual").value = "";
+  $("#scanDlg").showModal();
+  startCamera();
+}
+function stopScan(){
+  clearInterval(detectTimer); detectTimer = null;
+  if(zxReader){ try{ zxReader.reset(); }catch(e){} zxReader = null; }
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
+  $("#video").srcObject = null;
+  $("#cam").classList.remove("on");
+}
+function camFail(msg){ stopScan(); $("#scanMsg").textContent = msg; setTimeout(()=>$("#manual").focus(),50); }
+
+async function startCamera(){
+  $("#scanMsg").textContent = "Starting camera…";
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+    return camFail("This browser won't open the camera here. Key the number in instead.");
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1280}}});
+  }catch(err){
+    const n = err && err.name;
+    if(n==="NotAllowedError") return camFail("Camera access was blocked. Allow the camera for this page, or key the number in.");
+    if(n==="NotFoundError") return camFail("No camera found on this device. Key the number in instead.");
+    return camFail("The camera didn't start. Key the number in instead.");
+  }
+  const v = $("#video");
+  v.srcObject = stream; $("#cam").classList.add("on");
+  try{ await v.play(); }catch(e){}
+  $("#scanMsg").textContent = "Hold the label inside the box.";
+  if("BarcodeDetector" in window){
+    try{
+      const det = new window.BarcodeDetector({formats: FORMATS});
+      detectTimer = setInterval(async ()=>{
+        if(!stream || v.readyState < 2) return;
+        try{ const hits = await det.detect(v); if(hits && hits.length) gotCode(hits[0].rawValue); }catch(e){}
+      }, 250);
+      return;
+    }catch(e){}
+  }
+  loadZxing();
+}
+
+function loadZxing(){
+  const run = ()=>{
+    try{
+      zxReader = new window.ZXing.BrowserMultiFormatReader();
+      zxReader.decodeFromStream(stream, $("#video"), (res)=>{ if(res) gotCode(res.getText()); });
+      $("#scanMsg").textContent = "Hold the label inside the box.";
+    }catch(e){ camFail("Scanning isn't supported in this browser. Key the number in instead."); }
+  };
+  if(window.ZXing) return run();
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
+  s.onload = run;
+  s.onerror = ()=>camFail("Couldn't load the scanner. Key the number in instead.");
+  document.head.appendChild(s);
+}
+
+function gotCode(raw){
+  const code = String(raw||"").trim();
+  if(!code) return;
+  const now = Date.now();
+  if(code===lastCode && now-lastAt < 2500) return;
+  lastCode = code; lastAt = now;
+  if(navigator.vibrate) navigator.vibrate(40);
+  const cb = onScan; onScan = null;
+  stopScan(); $("#scanDlg").close();
+  if(cb) cb(code); else lookup(code);
+}
+
+function lookup(code){
+  const open = items.filter(i=>i.sku===code);
+  const hit = open.find(i=>!isDone(i)) || open[0];
+  if(hit){ tab = hit.type; render(); openEdit(hit); toast(`Already logged in ${TYPES[hit.type].label}`); }
+  else { openEdit(null, tab, {sku: code}); toast("New item — SKU filled in"); }
+}
+
+$("#scanBtn").onclick = ()=>openScan(null, "Scan a shelf label");
+$("#skuScan").onclick = ()=>openScan(code=>{ form.sku.value = code; toast("SKU scanned"); }, "Scan for this item");
+$("#scanClose").onclick = ()=>{ stopScan(); onScan=null; $("#scanDlg").close(); };
+$("#scanDlg").addEventListener("close", stopScan);
+$("#manualGo").onclick = ()=>{ const v=$("#manual").value.trim(); if(v) gotCode(v); };
+$("#manual").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#manualGo").click(); } });
+
+/* Hardware (wedge) scanners type fast and finish with Enter */
+let wedge = "", wedgeAt = 0;
+document.addEventListener("keydown", e=>{
+  const t = e.target;
+  if(t && (t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT")) return;
+  const now = Date.now();
+  if(now - wedgeAt > 120) wedge = "";
+  wedgeAt = now;
+  if(e.key.length===1 && /[\w-]/.test(e.key)) wedge += e.key;
+  else if(e.key==="Enter" && wedge.length>=6){ const c=wedge; wedge=""; gotCode(c); }
+});
+
+/* ---------- floor heatmap (outs) ----------
+   Layout traced from the store's Pointr map. To re-map a bay, edit FLOOR below:
+   a = aisle number, x = left edge in the 340-wide plan, cats = what's in it.   */
+const RACK_W = 26;
+const FLOOR = {
+  blocks: [
+    { y:14, h:130, badge:158, aisles:[
+      {a:"22", x:26,  cats:"Interior doors, decorative exterior doors, JW alcove, vinyl windows"},
+      {a:"21", x:58,  cats:"Pro Pak moulding, garage door alcove, barn doors"},
+      {a:"20", x:100, cats:"Household ladders, PFJ boards, ladders"},
+      {a:"19", x:176, cats:""},
+      {a:"18", x:210, cats:"Ram Board, fiberglass insulation, project panels"},
+      {a:"17", x:252, cats:"Metal products, shingle accessories, wire fence"}
+    ]},
+    { y:184, h:152, badge:350, aisles:[
+      {a:"11", x:12,  cats:"Lasers, Ryobi Link, Makita XGT accessories"},
+      {a:"12", x:44,  cats:"Tape measures, soft sided storage, levels"},
+      {a:"13", x:86,  cats:"Hooks and wire, stainless 316, anchors, nuts bolts washers"},
+      {a:"14", x:176, cats:""},
+      {a:"15", x:208, cats:"Concrete tools, concrete repair, bagged goods"},
+      {a:"16", x:250, cats:"Tape and accessories, short lumber bay, gypsum tools"}
+    ]}
+  ],
+  landmarks:[
+    {label:"Laydown",  x:274, y:256, w:34, h:76, rot:true},
+    {label:"R1-001",   x:312, y:256, w:24, h:76, rot:true},
+    {label:"D25 Tool|Hardware", x:6,  y:370, w:66, h:52},
+    {label:"Pro Desk|Pro Wall", x:80, y:370, w:170, h:52}
+  ]
+};
+const MAP_AISLES = FLOOR.blocks.flatMap(b=>b.aisles.map(a=>a.a));
+const BUCKETS = [
+  {max:0,  v:"h0", label:"None"},
+  {max:2,  v:"h1", label:"1–2"},
+  {max:5,  v:"h2", label:"3–5"},
+  {max:9,  v:"h3", label:"6–9"},
+  {max:1e9,v:"h4", label:"10+"}
+];
+const bucketOf = n => BUCKETS.find(b=>n<=b.max);
+let mapOpen = false, heatMode = "all", selAisle = "";
+
+function outsByAisle(){
+  const by = {};
+  filteredOuts().forEach(i=>{
+    const k = String(i.aisle||"").trim();
+    if(!k) return;
+    by[k] = by[k] || {all:0, dirty:0, clean:0, oh:0, depts:new Set()};
+    by[k].all++;
+    const c = outClass(i);
+    if(c==="Dirty") by[k].dirty++; else if(c==="Clean") by[k].clean++;
+    const q = ohNum(i); if(q!==null) by[k].oh += q;
+    if(i.dept) by[k].depts.add(i.dept);
+  });
+  return by;
+}
+const heatCount = (rec)=> !rec ? 0 : heatMode==="all" ? rec.all : heatMode==="dirty" ? rec.dirty : rec.clean;
+
+function renderMap(){
+  const box = $("#floormap");
+  box.hidden = !(mapOpen && tab==="out");
+  if(box.hidden) return;
+  const by = outsByAisle();
+  const noAisle = filteredOuts().filter(i=>!String(i.aisle||"").trim()).length;
+
+  const modeLbl = {all:"outs", dirty:"dirty outs", clean:"clean outs"}[heatMode];
+  const racks = FLOOR.blocks.map(b=>b.aisles.map(A=>{
+    const rec = by[A.a], n = heatCount(rec), bk = bucketOf(n);
+    const cx = A.x + RACK_W/2;
+    const sel = selAisle===A.a;
+    const desc = `Aisle ${A.a}${A.cats?` — ${A.cats}`:""} — ${n} ${modeLbl}`;
+    return `<g class="rack${sel?" sel":""}" data-aisle="${A.a}" tabindex="0" role="button" aria-label="${esc(desc)}">
+      <title>${esc(desc)}</title>
+      <rect class="body" x="${A.x}" y="${b.y}" width="${RACK_W}" height="${b.h}" rx="3"
+        fill="var(--${bk.v})" stroke="var(--line)" stroke-width="1"/>
+      ${n?`<text x="${cx}" y="${b.y+b.h/2+6}" text-anchor="middle" font-size="16" font-weight="700"
+        fill="var(--${bk.v}i)">${n}</text>`:""}
+      <rect x="${cx-12}" y="${b.badge-13}" width="24" height="21" rx="3"
+        fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+      <text x="${cx}" y="${b.badge+3}" text-anchor="middle" font-size="13" font-weight="700"
+        fill="var(--ink)">${A.a}</text>
+    </g>`;
+  }).join("")).join("");
+
+  const marks = FLOOR.landmarks.map(m=>{
+    const cx = m.x+m.w/2, cy = m.y+m.h/2;
+    const parts = m.label.split("|");
+    const y0 = cy + 4 - (parts.length-1)*6;
+    return `<g><rect x="${m.x}" y="${m.y}" width="${m.w}" height="${m.h}" rx="3"
+      fill="none" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="${cx}" y="${y0}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--muted)"
+      ${m.rot?`transform="rotate(-90 ${cx} ${cy})"`:""}>${parts.map((t,n)=>
+        `<tspan x="${cx}" dy="${n?12:0}">${esc(t)}</tspan>`).join("")}</text></g>`;
+  }).join("");
+
+  const legend = `<div class="heatlegend">${BUCKETS.map(b=>
+    `<span class="sw"><i style="background:var(--${b.v})"></i><b>${b.label}</b></span>`).join("")}</div>`;
+
+  const offs = Object.keys(by).filter(a=>!MAP_AISLES.includes(a))
+    .sort((x,y)=>Number(x)-Number(y));
+
+  let detail = "";
+  if(selAisle){
+    const rec = by[selAisle];
+    const meta = FLOOR.blocks.flatMap(b=>b.aisles).find(a=>a.a===selAisle);
+    const depts = rec ? [...rec.depts].join(", ") : "";
+    detail = `<div class="detail">
+      <h4>Aisle ${esc(selAisle)}</h4>
+      <p>${rec ? `${rec.all} open out${rec.all===1?"":"s"} — ${rec.dirty} dirty, ${rec.clean} clean${rec.oh?`, ${Math.round(rec.oh*10)/10} units on hand`:""}` : "No outs here right now."}</p>
+      ${meta&&meta.cats?`<p>${esc(meta.cats)}</p>`:""}
+      ${depts?`<p>Logged under: ${esc(depts)}</p>`:""}
+      <button class="btn ghost clr" id="clearAisle">Show all aisles</button>
+    </div>`;
+  }
+
+  box.innerHTML = `<div class="chartcard">
+    <h3>Outs by location</h3>
+    <p class="cap">Tap an aisle to filter the list below. ${noAisle?`${noAisle} out${noAisle===1?"":"s"} with no aisle set.`:""}</p>
+    <div class="modes">
+      <button data-heat="all" aria-pressed="${heatMode==="all"}">All outs</button>
+      <button data-heat="dirty" aria-pressed="${heatMode==="dirty"}">Dirty only</button>
+      <button data-heat="clean" aria-pressed="${heatMode==="clean"}">Clean only</button>
+    </div>
+    <svg viewBox="0 0 340 430" role="img" aria-label="Store floor plan shaded by ${esc(modeLbl)} per aisle">
+      <text x="4" y="176" font-size="10" font-weight="600" fill="var(--muted)">&larr; aisles 1–10</text>
+      ${marks}${racks}
+    </svg>
+    ${legend}
+    <p class="chartnote">Shading counts ${esc(modeLbl)} per aisle. Aisles 14 and 19 are placed from the rack positions — the map crop didn't show their badges.</p>
+    ${offs.length?`<div class="offmap"><span class="chartnote" style="margin:0;align-self:center">Not on this map:</span>
+      ${offs.map(a=>`<button data-aisle="${esc(a)}" aria-pressed="${selAisle===a}">Aisle ${esc(a)} · ${heatCount(by[a])}</button>`).join("")}</div>`:""}
+    ${detail}
+  </div>`;
+}
+
+document.addEventListener("click", e=>{
+  const h = e.target.closest("[data-heat]");
+  if(h){ heatMode = h.dataset.heat; renderMap(); return; }
+  const c = e.target.closest("#clearAisle");
+  if(c){ selAisle = ""; render(); return; }
+  const a = e.target.closest("#floormap [data-aisle]");
+  if(a){ selAisle = selAisle===a.dataset.aisle ? "" : a.dataset.aisle; render(); }
+});
+document.addEventListener("keydown", e=>{
+  const a = e.target.closest && e.target.closest("#floormap [data-aisle]");
+  if(a && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); a.dispatchEvent(new Event("click",{bubbles:true})); }
+});
+$("#mapBtn").onclick = ()=>{
+  mapOpen = !mapOpen;
+  $("#mapBtn").textContent = mapOpen ? "Hide heatmap" : "Heatmap";
+  if(!mapOpen) selAisle = "";
+  render();
+};
+
+/* ---------- charts (outs) ---------- */
+let chartsOpen = false;
+function filteredOuts(){
+  const q = $("#q").value.trim().toLowerCase();
+  const dept = $("#deptFilter").value;
+  const showDone = $("#showDone").checked;
+  return items.filter(i=>i.type==="out")
+    .filter(i=>showDone || !isDone(i))
+    .filter(i=>!dept || i.dept===dept)
+    .filter(i=>!q || [i.title,i.sku,i.notes,i.dept].join(" ").toLowerCase().includes(q));
+}
+function ohNum(i){
+  const q = String(i.qty??"").trim(); if(q==="") return null;
+  const n = Number(q.replace(/[^0-9.-]/g,"")); return isFinite(n) ? n : null;
+}
+function svgBars(rows, unitLabel){
+  const W = 320, H = 150, padL = 26, padB = 30, padT = 10;
+  const max = Math.max(1, ...rows.map(r=>r.clean+r.dirty));
+  const plotH = H - padB - padT, plotW = W - padL - 4;
+  const step = plotW / rows.length, bw = Math.min(38, step*0.62);
+  const y = v => padT + plotH - (v/max)*plotH;
+  const ticks = [0, Math.round(max/2), max].filter((v,i,a)=>a.indexOf(v)===i);
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(unitLabel)}">
+    ${ticks.map(t=>`<line x1="${padL}" x2="${W-4}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/>
+      <text x="${padL-5}" y="${y(t)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${t}</text>`).join("")}
+    ${rows.map((r,idx)=>{
+      const cx = padL + step*idx + step/2, total = r.clean+r.dirty;
+      const hD = (r.dirty/max)*plotH, hC = (r.clean/max)*plotH;
+      return `${r.dirty?`<rect x="${cx-bw/2}" y="${y(r.dirty)}" width="${bw}" height="${hD}" fill="var(--late)" rx="2"/>`:""}
+        ${r.clean?`<rect x="${cx-bw/2}" y="${y(total)}" width="${bw}" height="${hC}" fill="var(--ok)" rx="2"/>`:""}
+        <text x="${cx}" y="${y(total)-4}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">${total}</text>
+        <text x="${cx}" y="${H-12}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(r.label)}</text>`;
+    }).join("")}
+  </svg>`;
+}
+const LEGEND = `<div class="legend"><span><i style="background:var(--late)"></i>Dirty (has OH)</span>
+  <span><i style="background:var(--ok)"></i>Clean (OH 0)</span></div>`;
+
+function renderCharts(){
+  const box = $("#charts");
+  box.hidden = !(chartsOpen && tab==="out");
+  if(box.hidden) return;
+  const outs = filteredOuts();
+  if(!outs.length){ box.innerHTML = `<div class="chartcard"><p class="cap" style="margin:0">No outs match the current filters.</p></div>`; return; }
+
+  const dirty = outs.filter(i=>outClass(i)==="Dirty").length;
+  const clean = outs.filter(i=>outClass(i)==="Clean").length;
+  const none = outs.length - dirty - clean;
+  const known = dirty + clean;
+  const pct = n => known ? Math.round(n/known*100) : 0;
+
+  let html = `<div class="chartcard">
+    <h3>Dirty vs clean</h3>
+    <p class="cap">${known} classified out${known===1?"":"s"}${none?` — ${none} with no OH entered`:""}</p>
+    <div class="split">
+      ${dirty?`<span style="background:var(--late);flex:${dirty}">${pct(dirty)}%</span>`:""}
+      ${clean?`<span style="background:var(--ok);flex:${clean}">${pct(clean)}%</span>`:""}
+      ${!known?`<span style="background:var(--muted);flex:1">No OH data</span>`:""}
+    </div>
+    <p class="chartnote">${dirty} dirty &middot; ${clean} clean${none?` &middot; ${none} unclassified`:""}</p>
+    ${LEGEND}
+  </div>`;
+
+  const byAisle = {};
+  outs.forEach(i=>{
+    const k = i.aisle ? String(i.aisle) : "—";
+    byAisle[k] = byAisle[k] || {label:k, clean:0, dirty:0};
+    const c = outClass(i);
+    if(c==="Dirty") byAisle[k].dirty++; else if(c==="Clean") byAisle[k].clean++;
+  });
+  const aisleRows = Object.values(byAisle)
+    .filter(r=>r.clean+r.dirty>0)
+    .sort((a,b)=>(b.clean+b.dirty)-(a.clean+a.dirty)).slice(0,8)
+    .sort((a,b)=> a.label==="—"?1 : b.label==="—"?-1 : Number(a.label)-Number(b.label));
+  html += `<div class="chartcard">
+    <h3>By aisle</h3>
+    <p class="cap">${aisleRows.length?`Busiest ${aisleRows.length} aisle${aisleRows.length===1?"":"s"}`:"No aisles recorded yet"}</p>
+    ${aisleRows.length?svgBars(aisleRows,"Outs by aisle")+LEGEND:""}
+  </div>`;
+
+  const buckets = [["0",v=>v===0],["1–2",v=>v>=1&&v<=2],["3–5",v=>v>=3&&v<=5],["6–10",v=>v>=6&&v<=10],["11+",v=>v>10]];
+  const bRows = buckets.map(([label,test])=>{
+    const n = outs.filter(i=>{ const v=ohNum(i); return v!==null && test(v); }).length;
+    return {label, clean: label==="0"?n:0, dirty: label==="0"?0:n};
+  });
+  const bTotal = bRows.reduce((s,r)=>s+r.clean+r.dirty,0);
+  html += `<div class="chartcard">
+    <h3>By on-hand quantity</h3>
+    <p class="cap">${bTotal} out${bTotal===1?"":"s"} with an OH count</p>
+    ${bTotal?svgBars(bRows,"Outs by on hand quantity")+LEGEND:`<p class="chartnote">Add OH counts to see this breakdown.</p>`}
+  </div>`;
+
+  box.innerHTML = html;
+}
+$("#chartBtn").onclick = ()=>{ chartsOpen = !chartsOpen; $("#chartBtn").textContent = chartsOpen?"Hide charts":"Charts"; render(); };
+
+/* ---------- walk sheet ---------- */
+let wsScope = "all";
+
+function wsSource(){
+  const useF = $("#wsFilters").checked;
+  let list = useF ? filteredOuts() : items.filter(i=>i.type==="out" && !isDone(i));
+  if(useF && selAisle) list = list.filter(i=>String(i.aisle||"").trim()===selAisle);
+  if(wsScope==="dirty") list = list.filter(i=>outClass(i)==="Dirty");
+  else if(wsScope==="clean") list = list.filter(i=>outClass(i)==="Clean");
+  return list;
+}
+const NOAISLE = "￿";
+function wsGroups(list){
+  const by = {};
+  list.forEach(i=>{ const k = String(i.aisle||"").trim() || NOAISLE; (by[k] = by[k]||[]).push(i); });
+  return Object.keys(by).sort((a,b)=>{
+    if(a===NOAISLE) return 1;
+    if(b===NOAISLE) return -1;
+    const na = Number(a), nb = Number(b);
+    if(isFinite(na) && isFinite(nb)) return na-nb;
+    return a.localeCompare(b);
+  }).map(k=>({
+    aisle: k===NOAISLE ? "" : k,
+    rows: by[k].slice().sort((a,b)=>
+      (Number(a.bay||0)-Number(b.bay||0)) ||
+      ((outClass(b)==="Dirty")-(outClass(a)==="Dirty")) ||
+      String(a.title).localeCompare(String(b.title)))
+  }));
+}
+function ohCell(i){
+  const oc = outClass(i), q = String(i.qty??"").trim();
+  if(oc==="Dirty") return `<span class="dirty">${esc(q)} — DIRTY</span>`;
+  if(oc==="Clean") return "0";
+  return "&mdash;";
+}
+function buildSheet(){
+  const list = wsSource(), groups = wsGroups(list);
+  const who = $("#wsWho").value.trim();
+  const useF = $("#wsFilters").checked;
+  const dept = useF ? $("#deptFilter").value : "";
+  const scopeLbl = {all:"All open outs", dirty:"Dirty outs only", clean:"Clean outs only"}[wsScope];
+  const dirty = list.filter(i=>outClass(i)==="Dirty").length;
+  const anySold = list.some(i=>i.lastSold);
+
+  const head = `<h1>Outs walk sheet</h1>
+    <div class="ps-meta"><b>${esc(new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}))}</b>
+      &nbsp;&middot;&nbsp; ${esc(scopeLbl)}${dept?` &nbsp;&middot;&nbsp; ${esc(dept)}`:""}${useF&&selAisle?` &nbsp;&middot;&nbsp; aisle ${esc(selAisle)}`:""}
+      &nbsp;&middot;&nbsp; ${list.length} item${list.length===1?"":"s"}${dirty?`, ${dirty} dirty`:""}</div>
+    <div class="ps-assign">
+      <span>Assigned to: <u>${who?"&nbsp;"+esc(who)+"&nbsp;":"&nbsp;"}</u></span>
+      <span>Started: <u>&nbsp;</u></span>
+      <span>Finished: <u>&nbsp;</u></span>
+    </div>`;
+
+  if(!list.length) return head + `<p class="ps-empty">Nothing to walk — no outs match this selection.</p>`;
+
+  const body = groups.map(g=>
+    `<tr class="grp"><td colspan="${anySold?7:6}">${g.aisle?`Aisle ${esc(g.aisle)}`:"No aisle set"} &nbsp;<span style="font-weight:400;font-size:10pt">(${g.rows.length})</span></td></tr>` +
+    g.rows.map(i=>{
+      const n = i.lastSold ? daysAgo(i.lastSold) : null;
+      return `<tr>
+        <td class="c"><span class="box"></span></td>
+        <td class="bay">${i.bay?esc(i.bay):"&mdash;"}</td>
+        <td>${esc(i.title)}${i.sku||i.dept?`<br><span class="sku">${i.sku?`SKU ${esc(i.sku)}`:""}${i.sku&&i.dept?" &middot; ":""}${esc(i.dept||"")}</span>`:""}</td>
+        <td>${ohCell(i)}</td>
+        ${anySold?`<td>${n===null?"&mdash;":`${n>=90?`<span class="dirty">${n}d</span>`:`${n}d`}`}</td>`:""}
+        <td>${esc(i.status)}</td>
+        <td><span class="writein">&nbsp;</span></td>
+      </tr>`;
+    }).join("")).join("");
+
+  return head + `<table>
+    <thead><tr>
+      <th class="c">&#10003;</th><th>Bay</th><th>Item</th><th>OH</th>
+      ${anySold?`<th>Sold</th>`:""}<th>Status</th><th style="width:23%">Found / notes</th>
+    </tr></thead>
+    <tbody>${body}</tbody>
+  </table>
+  <p class="ps-foot">DIRTY means the system shows stock on hand — check the bay and the overhead before ordering.
+  Leave the box empty for anything you could not locate.</p>`;
+}
+function sheetText(){
+  const list = wsSource(), groups = wsGroups(list);
+  const who = $("#wsWho").value.trim();
+  const out = [`Outs walk sheet — ${new Date().toLocaleDateString()}`,
+    `${{all:"All open outs",dirty:"Dirty outs only",clean:"Clean outs only"}[wsScope]} · ${list.length} item${list.length===1?"":"s"}`];
+  if(who) out.push(`Assigned to: ${who}`);
+  if(!list.length){ out.push("", "Nothing to walk."); return out.join("\n"); }
+  groups.forEach(g=>{
+    out.push("", `${g.aisle?`AISLE ${g.aisle}`:"NO AISLE SET"} (${g.rows.length})`);
+    g.rows.forEach(i=>{
+      const oc = outClass(i), n = i.lastSold ? daysAgo(i.lastSold) : null;
+      out.push(`  [ ] ${[i.bay&&`Bay ${i.bay}`, i.title, i.sku&&`SKU ${i.sku}`,
+        oc==="Dirty"?`OH ${i.qty} DIRTY`:oc==="Clean"?"OH 0":null,
+        n!==null&&`sold ${n}d ago`, i.status].filter(Boolean).join(" · ")}`);
+    });
+  });
+  out.push("", "DIRTY = system shows on hand. Check the bay and overhead before ordering.");
+  return out.join("\n");
+}
+function wsRefresh(){
+  const prev = $("#wsPrev");
+  prev.style.whiteSpace = "";
+  prev.innerHTML = `<div class="wsscale"><div class="walksheet">${buildSheet()}</div></div>`;
+  requestAnimationFrame(()=>{
+    const inner = prev.querySelector(".walksheet"), box = prev.querySelector(".wsscale");
+    if(!inner || !box) return;
+    const scale = Math.min(1, (prev.clientWidth || 680) / 680);
+    inner.style.transform = `scale(${scale})`;
+    box.style.height = Math.ceil(inner.scrollHeight * scale) + "px";
+  });
+}
+
+$("#wsBtn").onclick = ()=>{ wsRefresh(); $("#wsDlg").showModal(); };
+$("#wsClose").onclick = ()=>$("#wsDlg").close();
+$("#wsWho").addEventListener("input", wsRefresh);
+$("#wsFilters").addEventListener("change", wsRefresh);
+$("#wsScope").addEventListener("click", e=>{
+  const b = e.target.closest("[data-ws]"); if(!b) return;
+  wsScope = b.dataset.ws;
+  [...$("#wsScope").children].forEach(x=>x.setAttribute("aria-pressed", String(x===b)));
+  wsRefresh();
+});
+$("#wsPrint").onclick = ()=>{
+  $("#printsheet").innerHTML = buildSheet();
+  $("#wsDlg").close();
+  setTimeout(()=>{
+    try{ window.print(); }
+    catch(e){ toast("Printing isn't available here — use Copy as text."); }
+  }, 80);
+};
+$("#wsCopy").onclick = async ()=>{
+  const txt = sheetText();
+  try{ await navigator.clipboard.writeText(txt); toast("Walk sheet copied"); }
+  catch(e){
+    const p = $("#wsPrev"); p.textContent = txt; p.style.whiteSpace = "pre-wrap";
+    const r = document.createRange(); r.selectNodeContents(p);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    toast("Selected — copy it from here.");
+  }
+};
+
+/* ---------- shift summary ---------- */
+function summary(){
+  const lines = [`DS summary for ${new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})}`];
+  const hazards = items.filter(i=>i.hazard && !isDone(i));
+  if(hazards.length){ lines.push("", "SAFETY"); hazards.forEach(i=>lines.push(`- ${line(i)}`)); }
+  for(const [k,t] of Object.entries(TYPES)){
+    const open = items.filter(i=>i.type===k && !isDone(i) && !i.hazard);
+    if(!open.length) continue;
+    lines.push("", `${t.label} (${open.length} open)`);
+    open.sort((a,b)=>(a.due||"9999").localeCompare(b.due||"9999")).forEach(i=>lines.push(`- ${line(i)}`));
+  }
+  if(lines.length===1) lines.push("", "No open items.");
+  return lines.join("\n");
+}
+function line(i){
+  const t = TYPES[i.type];
+  const loc = [i.aisle&&`A${i.aisle}`, i.bay&&`B${i.bay}`].filter(Boolean).join("-");
+  return [i.title, i.dept, loc, i.sku&&`SKU ${i.sku}`, i.qty&&`${t.qty} ${i.qty}`, outClass(i)&&`${outClass(i).toUpperCase()}`,
+    i.lastSold&&`last sold ${daysAgo(i.lastSold)}d`, `[${i.status}]`,
+    i.due&&`${t.due.toLowerCase()} ${fmtDate(i.due)}${isLate(i)?" LATE":""}`].filter(Boolean).join(", ");
+}
+$("#sumBtn").onclick = ()=>{ $("#sumText").textContent = summary(); $("#sumDlg").showModal(); };
+$("#sumClose").onclick = ()=>$("#sumDlg").close();
+$("#sumCopy").onclick = async ()=>{
+  const txt = $("#sumText").textContent;
+  try{ await navigator.clipboard.writeText(txt); toast("Summary copied"); }
+  catch(e){ const r=document.createRange(); r.selectNodeContents($("#sumText")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast("Text selected. Copy it from here."); }
+};
+
+loadLocal();
+if(/claude/.test(location.hostname)){
+  const urls = {
+    d21link: "https://claude.ai/artifact/Ntq7wfLde3LbmfSHoLGEzV",
+    takeofflink: "https://claude.ai/artifact/HjE22LSo881Qm9uFwmAzbw",
+    overheadlink: "https://claude.ai/artifact/6QBjmAhcw5J8ysRMNzLMrW"
+  };
+  Object.entries(urls).forEach(([id,u])=>{ const a=$("#"+id); if(a){ a.href=u; a.target="_top"; } });
+}
+render();
+connect();
+})();
+</script>
+</body>
+</html>
