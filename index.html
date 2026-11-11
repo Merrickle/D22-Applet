@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>Outs Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="top">
+    <div class="top-inner">
+      <h1>Outs Tracker</h1>
+      <div class="counts" aria-label="Open outs summary">
+        <div class="count">
+          <span class="num" id="countOpen">0</span>
+          <span class="lbl">Open</span>
+        </div>
+        <div class="count count-clean">
+          <span class="num" id="countClean">0</span>
+          <span class="lbl">Clean</span>
+        </div>
+        <div class="count count-dirty">
+          <span class="num" id="countDirty">0</span>
+          <span class="lbl">Dirty</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <p class="warn" id="storageWarn" hidden>
+      This browser is blocking local storage, so outs will not be saved after you close the page.
+      Export a JSON backup before leaving.
+    </p>
+
+    <div class="tabs" role="tablist" aria-label="View">
+      <button type="button" class="tab is-on" role="tab" aria-selected="true" data-view="open" id="tabOpen">Open</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" data-view="resolved" id="tabResolved">Resolved</button>
+    </div>
+
+    <section class="controls" aria-label="Search, filter and sort">
+      <label class="sr-only" for="search">Search by SKU or shelf location</label>
+      <input type="search" id="search" placeholder="Search SKU or location (e.g. 17-004)"
+             autocomplete="off" autocapitalize="off" spellcheck="false">
+
+      <div class="control-row">
+        <div class="seg" role="group" aria-label="Filter by type">
+          <button type="button" class="seg-btn is-on" data-type="all" aria-pressed="true">All</button>
+          <button type="button" class="seg-btn" data-type="clean" aria-pressed="false">Clean</button>
+          <button type="button" class="seg-btn" data-type="dirty" aria-pressed="false">Dirty</button>
+        </div>
+
+        <label class="sort">
+          <span class="sr-only">Sort by</span>
+          <select id="sort">
+            <option value="logged-desc">Newest logged</option>
+            <option value="logged-asc">Oldest logged</option>
+            <option value="location">Location (walk order)</option>
+            <option value="sku">SKU</option>
+            <option value="stale">Days since last sale</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <p class="result-info" id="resultInfo" aria-live="polite"></p>
+
+    <ul class="list" id="list"></ul>
+    <p class="empty" id="empty" hidden></p>
+
+    <section class="data" aria-labelledby="dataHeading">
+      <h2 id="dataHeading">Backup and data</h2>
+      <div class="data-grid">
+        <button type="button" class="btn" id="exportJson">Export JSON backup</button>
+        <button type="button" class="btn" id="exportCsv">Export CSV of current list</button>
+        <button type="button" class="btn" id="importBtn">Import JSON backup</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+
+      <h3>Sample data</h3>
+      <p class="hint">Sample outs are tagged SAMPLE so they can't be confused with real ones.</p>
+      <div class="data-grid">
+        <button type="button" class="btn" id="loadSamples">Load sample data</button>
+        <button type="button" class="btn btn-danger" id="clearAll">Clear all data</button>
+      </div>
+    </section>
+  </main>
+
+  <button type="button" class="add-btn" id="addBtn"><span aria-hidden="true">+</span> Add Out</button>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog class="sheet" id="formDialog" aria-labelledby="formTitle">
+    <form id="outForm" novalidate>
+      <div class="sheet-head">
+        <h2 id="formTitle">Add Out</h2>
+        <button type="button" class="btn btn-quiet" id="cancelTop" aria-label="Close">Close</button>
+      </div>
+
+      <div class="sheet-body">
+        <div class="field">
+          <label for="fSku">SKU</label>
+          <input type="text" id="fSku" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <p class="err" id="err-fSku"></p>
+        </div>
+
+        <fieldset class="field">
+          <legend>Type</legend>
+          <div class="type-toggle">
+            <label class="type-opt type-clean">
+              <input type="radio" name="outType" value="clean" checked>
+              <span><strong>Clean</strong><small>Empty, 0 on hand</small></span>
+            </label>
+            <label class="type-opt type-dirty">
+              <input type="radio" name="outType" value="dirty">
+              <span><strong>Dirty</strong><small>Empty, stock in store</small></span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Shelf location <small>(the empty spot)</small></legend>
+          <div class="loc-inputs">
+            <label>
+              <span>Aisle</span>
+              <input type="text" id="fAisle" inputmode="numeric" maxlength="2" placeholder="17" autocomplete="off">
+            </label>
+            <label>
+              <span>Bay</span>
+              <input type="text" id="fBay" inputmode="numeric" maxlength="3" placeholder="004" autocomplete="off">
+            </label>
+            <label>
+              <span>Shelf</span>
+              <input type="text" id="fShelf" inputmode="numeric" maxlength="3" placeholder="056" autocomplete="off">
+            </label>
+          </div>
+          <p class="hint" id="locPreview"></p>
+          <p class="err" id="err-loc"></p>
+        </fieldset>
+
+        <div class="field">
+          <label for="fOnHand">On-hand count</label>
+          <input type="number" id="fOnHand" inputmode="numeric" min="0" step="1">
+          <p class="hint" id="onHandHint"></p>
+          <p class="err" id="err-fOnHand"></p>
+        </div>
+
+        <div id="dirtyFields" hidden>
+          <div class="field">
+            <label for="fOverhead">Overhead location <small>(where the product is stored)</small></label>
+            <input type="text" id="fOverhead" placeholder="Overhead above bay 012" autocomplete="off">
+            <p class="err" id="err-fOverhead"></p>
+          </div>
+
+          <div class="field">
+            <label for="fLastSale">Last sale date</label>
+            <input type="date" id="fLastSale">
+            <p class="hint" id="lastSaleHint"></p>
+            <p class="err" id="err-fLastSale"></p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="fNotes">Notes <small>(optional)</small></label>
+          <textarea id="fNotes" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="sheet-foot">
+        <button type="button" class="btn" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save out</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
